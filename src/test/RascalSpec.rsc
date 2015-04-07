@@ -2,35 +2,52 @@ module \test::RascalSpec
 
 import Prelude;
 
+public alias Spec = bool();
 public alias Expectation = tuple[ 
-	void( &T v) toBe, 
-	void( str, bool( &T ) ) toMatch,
-	void( &Y match ) toContain,
-	void( num i ) toBeLessThan,
-	void( num i ) toBeGreaterThan,
-	void() toThrow
+	bool( &T v) toBe, 
+	bool( str, bool( &T ) ) toMatch,
+	bool( &Y match ) toContain,
+	bool( num i ) toBeLessThan,
+	bool( num i ) toBeGreaterThan,
+	bool() toThrow
 ];
 
 public bool id( bool i ) = i;
 public bool not( bool i ) = !i;
 
+private void print( int indent, str s ) = print( left("", indent ) + s );
 private void println( int indent, str s ) = println( left("", indent ) + s );
 
 public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	
-	void toBe( &T match ) {
+	bool toBe( &T match ) {
 		if( modifier( input != match ) ) {
 			println(4,"Expected \'<input>\' to be \'<match>\'");	
 		}
+		
+		return ! modifier( input != match );
 	}
 	
-	void toMatch( str pattern, bool( &T ) matcher ) {
-		if( modifier( matcher( input ) ) ) {
-			println(4,"Expected \'<input>\' to match \'<pattern>\'");
+	bool toMatch( str pattern, bool( &T ) matcher ) {
+		result = modifier( ! matcher( input ) );
+		
+		if( result ) {
+			s = "<input>";
+			
+			print(4,"Expected \'<pattern>\' to be matched in: ");
+			if( /\n/ := s ) {
+				println();
+				println(4,s);
+			} else {
+				println(s);
+			}
+			
 		}
+		
+		return ! result;
 	}
 	
-	void toContain( &Y match ) {
+	bool toContain( &Y match ) {
 		default bool contains( _ ) = false;
 		bool contains( list[&Y] l )      { return modifier( !(match in l) ); }
 		bool contains( map[&Y,value] m ) { return modifier( !(match in m) ); }
@@ -40,32 +57,40 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		if( contains( input ) ) {
 			println(4,"Expected \'<match>\' to be in \'<input>\'");	
 		}
+		
+		return ! contains( input );
 	}
 	
-	void toBeLessThan( num i ) {
+	bool toBeLessThan( num i ) {
 		if( modifier( input > i ) ) {
 			println(4,"Expected \'<input>\', to be less than \'<i>\'");
 		}
+		
+		return ! modifier( input > i );
 	}
 	
-	void toBeGreaterThan( num i ) {
+	bool toBeGreaterThan( num i ) {
 		if( modifier( input < i ) ) {
 			println(4,"Expected \'<input>\', to be greater than \'<i>\'");
 		}
+		
+		return ! modifier( input < i );
 	}
 	
-	void toThrow() {
-		void call( &R() fun ) {
-			thrw = false;
+	bool toThrow() {
+		bool call( &R() fun ) {
+			thrw = true;
 			try fun();
-			catch : thrw = true;
+			catch : thrw = false;
 			
 			if( modifier( thrw ) ) {
 				println(4,"Expected \'<fun>\' to throw an exception");
 			}
+			
+			return ! modifier( thrw );
 		}
 		
-		call( input ); 
+		return call( input ); 
 	}
 	
 	return < 
@@ -78,15 +103,18 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	>;
 }
 
-public void xit( _, _ ) {}
-public void xdescribe( _, _ ) {}
+public Spec xit( _, _ ) { return () { return true; }; }
+public bool xdescribe( _, _ ) { return true; }
 
-public void \it( str description, void() spec ) {
-	println(2,"<description>");
-	spec();
+public Spec \it( str description, Spec spec ) {
+	return bool() { 
+		println(2,"<description>");
+		return spec();
+	};
 }
 
-public void describe( str description, void() suite ) {
+public bool describe( str description, list[Spec] suite ) {
 	println( description );
-	suite();
+	results = [ spec() | spec <- suite ];
+	return ( true | it && x | x <- results );
 }
