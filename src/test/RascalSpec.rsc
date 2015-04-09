@@ -15,14 +15,19 @@ public alias Expectation = tuple[
 public bool id( bool i ) = i;
 public bool not( bool i ) = !i;
 
-private void print( int indent, str s ) = print( left("", indent ) + s );
-private void println( int indent, str s ) = println( left("", indent ) + s );
+private str indentString( int indent, str s ) = intercalate( "\n", mapper( split( "\n", s ), str(str l) { return left( "", indent ) + l; } ) );
+
+private void print( int indent, str s ) = print( indentString( indent, s ) );
+private void println( int indent, str s ) = println( indentString( indent, s ) );
+
+private str checkMark = "\u2713";
+private str ballot = "\u2717";
 
 public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	
 	bool toBe( &T match ) {
 		if( modifier( input != match ) ) {
-			println(4,"Expected \'<input>\' to be \'<match>\'");	
+			println(4,"Expected \'<input>\' <modifier == not ? "not " : "">to be \'<match>\'");	
 		}
 		
 		return ! modifier( input != match );
@@ -34,10 +39,10 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		if( result ) {
 			s = "<input>";
 			
-			print(4,"Expected \'<pattern>\' to be matched in: ");
+			print(4,"Expected \'<pattern>\' <modifier == not ? "not " : "">to be matched in: ");
 			if( /\n/ := s ) {
 				println();
-				println(4,s);
+				println(6,s);
 			} else {
 				println(s);
 			}
@@ -55,7 +60,7 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		bool contains( rel[&Y,value] r ) { return modifier( !(match in r) ); }
 		
 		if( contains( input ) ) {
-			println(4,"Expected \'<match>\' to be in \'<input>\'");	
+			println(4,"Expected \'<match>\' <modifier == not ? "not " : "">to be in \'<input>\'");	
 		}
 		
 		return ! contains( input );
@@ -63,7 +68,7 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	
 	bool toBeLessThan( num i ) {
 		if( modifier( input > i ) ) {
-			println(4,"Expected \'<input>\', to be less than \'<i>\'");
+			println(4,"Expected \'<input>\', <modifier == not ? "not " : "">to be less than \'<i>\'");
 		}
 		
 		return ! modifier( input > i );
@@ -71,7 +76,7 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	
 	bool toBeGreaterThan( num i ) {
 		if( modifier( input < i ) ) {
-			println(4,"Expected \'<input>\', to be greater than \'<i>\'");
+			println(4,"Expected \'<input>\', <modifier == not ? "not " : "">to be greater than \'<i>\'");
 		}
 		
 		return ! modifier( input < i );
@@ -81,10 +86,13 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		bool call( &R() fun ) {
 			thrw = true;
 			try fun();
-			catch : thrw = false;
+			catch exception: {
+				thrw = false;
+				println(4,"<exception>");
+			}
 			
 			if( modifier( thrw ) ) {
-				println(4,"Expected \'<fun>\' to throw an exception");
+				println(4,"Expected \'<fun>\' <modifier == not ? "not " : "">to throw an exception");
 			}
 			
 			return ! modifier( thrw );
@@ -103,18 +111,30 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	>;
 }
 
-public Spec xit( _, _ ) { return () { return true; }; }
+public Spec xit( _, _ ) = bool() { return true; };
 public bool xdescribe( _, _ ) { return true; }
 
 public Spec \it( str description, Spec spec ) {
 	return bool() { 
 		println(2,"<description>");
-		return spec();
+		result = spec();
+		
+		if( result ) { 
+			print(2, checkMark ); 
+		} else {
+			print(2, ballot );
+		}
+		
+		print("\n");
+		return result;
 	};
 }
 
 public bool describe( str description, list[Spec] suite ) {
 	println( description );
 	results = [ spec() | spec <- suite ];
+	fails = size([ r | r <- results, !r ]);
+	success = size([ r | r <- results, r ]);
+	println( "<fails> failed, <success> succeeded" );
 	return ( true | it && x | x <- results );
 }

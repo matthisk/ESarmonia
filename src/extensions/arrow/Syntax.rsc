@@ -1,5 +1,5 @@
 module extensions::arrow::Syntax
-extend lang::javascript::saner::Syntax;
+extend core::Syntax;
 
 syntax Expression
 	= "(" { Id "," }* ")" "=\>" "{" Statement* "}"
