@@ -8,25 +8,18 @@ Statement desugar( s:(Statement)`class <Id name> { <Methods ms> }` )
 	= desugarClassDeclaration( name, ctor, ms )
 	when 
 		<Method ctor,Methods methods> := extractCtor( < (Method)`constructor() {}`, (Methods)`` >, ms );
-//Statement desugar( s:(Statement)`class <Id name> { <Constructor ctor> <Methods ms> }`)
-//	= desugarClassDeclaration( name, ctor, ms );
-
-Statement desugar( s:(Statement)`class <Id name> { <Constructor ctor> }`)
-	= (Statement)`var <Id name> = <Expression ctor>;`
-	when
-		Function ctor := ctorFunction( name, psEmpty(), stmEmpty() );
 
 private tuple[Method,Methods] extractCtor( tuple[Method,Methods] result, (Methods)`` ) = result;
+private default tuple[Method,Methods] extractCtor( <ctor, restMs>, (Methods)`<Method m><Method* ms>` )
+	= extractCtor( <ctor, methods>, (Methods)`<Method* ms>` )
+	when
+		str s := printlnExp( "non constructor method" ),
+		Methods methods := (Methods)`<Method* restMs><Method m>`;
 private tuple[Method,Methods] extractCtor( <ctor, restMs>, (Methods)`<Method m><Method* ms>` )
 	= <m,methods>
 	when
-		(Method)`constructor(<{Id ","}* ps>) { <Statement* body> }` := m,
+		(Method)`constructor(<{Id ","}* _>) { <Statement* _> }` := m,
 		Methods methods := (Methods)`<Method* restMs><Method* ms>`;
-private tuple[Method,Methods] extractCtor( <ctor, restMs>, (Methods)`<Method m><Method* ms>` )
-	= extractCtor( <ctor, methods>, (Methods)`<Method* ms>` )
-	when
-		Methods methods := (Methods)`<Method* restMs><Method m>`;
-	
 
 private Function ctorFunction( Id name, {Id ","}* ps, Statement* body ) 
 	= (Function)
@@ -35,14 +28,14 @@ private Function ctorFunction( Id name, {Id ","}* ps, Statement* body )
 		'<Statement* body> 
 	'}`;
 
-private Statement desugarClassDeclaration( Id name, Constructor ctor, Methods ms )
+private Statement desugarClassDeclaration( Id name, Method ctor, Methods ms )
 	= (Statement)`var <Id name> = (function() { 
 				 '<Statement ctorFunction> 
 				 '<Statement* methods> 
 				 'return <Expression name>; 
 				 '})();`
 	when
-		(Constructor)`constructor(<{Id ","}* ps>) { <Statement* body> }` := ctor,
+		(Method)`constructor(<{Id ","}* ps>) { <Statement* body> }` := ctor,
 		Statement* desugaredBody := desugarSuperConstructorCall( name, body ),
 		Statement* methods := desugarMethods( name, ms ),
 		Function ctorFunction := ctorFunction( name, ps, desugaredBody );

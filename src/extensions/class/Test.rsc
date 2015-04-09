@@ -63,46 +63,45 @@ test bool desugaringClassDeclarations() {
 	return
 	describe( "Class declarations", [
 		
-		\it("is desugared with an empty body", tryDesugar("class Name { }", [
-			
-			< "var Name = function Name() { classCallCheck(this,Name) };", bool( pt ) { return /(Statement)`var Name = function Name() { classCallCheck(this,Name); };` := pt; } >
-			
-		]) ),
-		
-		\it("is desugared with an empty constructor", tryDesugar("class Name { constructor() {} }", [
-			
-			< "", bool( pt ) { return false; } >
-			
-		]) ),
-		
-		\it("is desugared with methods", tryDesugar(
-			"class Name { 
-			'	constructor() { } 
-			'	adder( x, y ) { 
-			'		return x + y; 
-			'	} 
-			'}", [
-			
-			< "", bool( pt ) { return false; } >
-			
-		]) ),
-		
-		\it("is desugared with static method(s)", tryDesugar(
-			"class Name { 
-			'	constructor() { } 
-			'	static adder( x, y ) { 
-			'		return x + y; 
-			'	} 
-			'}", [
-			
-			< "", bool( pt ) { return false; } >
-			
-		]) ),
+		//\it("is desugared with an empty body", tryDesugar("class Name { }", [
+		//	
+		//	< "var Name = function Name() { classCallCheck(this,Name) };", bool( pt ) { return /(Statement)`var Name = function Name() { classCallCheck(this,Name); };` := pt; } >
+		//	
+		//]) ),
+		//
+		//\it("is desugared with an empty constructor", tryDesugar("class Name { constructor() {} }", [
+		//	
+		//	< "", bool( pt ) { return false; } >
+		//	
+		//]) ),
+		//
+		//\it("is desugared with methods", tryDesugar(
+		//	"class Name { 
+		//	'	constructor() { } 
+		//	'	adder( x, y ) { 
+		//	'		return x + y; 
+		//	'	} 
+		//	'}", [
+		//	
+		//	< "", bool( pt ) { return false; } >
+		//	
+		//]) ),
+		//
+		//\it("is desugared with static method(s)", tryDesugar(
+		//	"class Name { 
+		//	'	constructor() { } 
+		//	'	static adder( x, y ) { 
+		//	'		return x + y; 
+		//	'	} 
+		//	'}", [
+		//	
+		//	< "", bool( pt ) { return false; } >
+		//	
+		//]) ),
 		
 		\it("is desugared with super constructor call", tryDesugar(
 			"class Name { 
-			'	constructor( x ) { 
-			'		super( x );
+			'	constructor( ) { 
 			'	}  
 			'}", [
 			

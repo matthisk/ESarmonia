@@ -1,6 +1,6 @@
 module desugar::Runner
 
-import lang::javascript::saner::Syntax;
+import core::Syntax;
 
 start[Source] desugar( start[Source] pt ) {
 	return solve( pt ) {
