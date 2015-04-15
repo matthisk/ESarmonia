@@ -1,27 +1,24 @@
-module \test::RascalSpec
+module \test::rascalspec::Expectation
 
 import Prelude;
 
-public alias Spec = bool();
-public alias Expectation = tuple[ 
-	bool( &T v) toBe, 
-	bool( str, bool( &T ) ) toMatch,
-	bool( &Y match ) toContain,
-	bool( num i ) toBeLessThan,
-	bool( num i ) toBeGreaterThan,
-	bool() toThrow
-];
+import \test::rascalspec::Util;
+
+public data Expectation
+	= expectation(
+		bool( &T v) toBe, 
+		bool( str, bool( &T ) ) toMatch,
+		bool( &Y match ) toContain,
+		bool( num i ) toBeLessThan,
+		bool( num i ) toBeGreaterThan,
+		bool() toThrow,
+		
+		Expectation( tuple[bool,&T]( &T ) ) toDeepMatch,
+		Expectation() not
+	);
 
 public bool id( bool i ) = i;
 public bool not( bool i ) = !i;
-
-private str indentString( int indent, str s ) = intercalate( "\n", mapper( split( "\n", s ), str(str l) { return left( "", indent ) + l; } ) );
-
-private void print( int indent, str s ) = print( indentString( indent, s ) );
-private void println( int indent, str s ) = println( indentString( indent, s ) );
-
-private str checkMark = "\u2713";
-private str ballot = "\u2717";
 
 public Expectation expect( &T input, bool(bool i) modifier = id ) {
 	
@@ -101,40 +98,29 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		return call( input ); 
 	}
 	
-	return < 
+	Expectation toDeepMatch( tuple[bool,&T]( &T ) matcher ) {
+		< success, match > = matcher( input );
+		
+		if( modifier( ! sucess ) ) {
+			println(4,"Expected a match <modifier == not ? "not " : "">to be matched in: <input>");
+		}
+			
+		return expect( match );
+	}
+	
+	Expectation notModifier() { 
+		return expect( input, modifier = not ); 
+	}
+
+	return expectation(
 		toBe, 
 		toMatch, 
 		toContain, 
 		toBeLessThan, 
 		toBeGreaterThan,
-		toThrow
-	>;
-}
-
-public Spec xit( _, _ ) = bool() { return true; };
-public bool xdescribe( _, _ ) { return true; }
-
-public Spec \it( str description, Spec spec ) {
-	return bool() { 
-		println(2,"<description>");
-		result = spec();
+		toThrow,
 		
-		if( result ) { 
-			print(2, checkMark ); 
-		} else {
-			print(2, ballot );
-		}
-		
-		print("\n");
-		return result;
-	};
-}
-
-public bool describe( str description, list[Spec] suite ) {
-	println( description );
-	results = [ spec() | spec <- suite ];
-	fails = size([ r | r <- results, !r ]);
-	success = size([ r | r <- results, r ]);
-	println( "<fails> failed, <success> succeeded" );
-	return ( true | it && x | x <- results );
+		toDeepMatch,
+		notModifier
+	);
 }
