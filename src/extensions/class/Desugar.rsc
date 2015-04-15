@@ -2,43 +2,40 @@ module extensions::class::Desugar
 extend desugar::Desugar;
 
 import IO;
+import Ambiguity;
 import extensions::class::Syntax;
 
-Statement desugar( s:(Statement)`class <Id name> { <Methods ms> }` )
-	= desugarClassDeclaration( name, ctor, ms )
-	when 
-		<Method ctor,Methods methods> := extractCtor( < (Method)`constructor() {}`, (Methods)`` >, ms );
-
-private tuple[Method,Methods] extractCtor( tuple[Method,Methods] result, (Methods)`` ) = result;
-private default tuple[Method,Methods] extractCtor( <ctor, restMs>, (Methods)`<Method m><Method* ms>` )
-	= extractCtor( <ctor, methods>, (Methods)`<Method* ms>` )
+Statement desugar( Statement class )
+	= ssr
 	when
-		str s := printlnExp( "non constructor method" ),
-		Methods methods := (Methods)`<Method* restMs><Method m>`;
-private tuple[Method,Methods] extractCtor( <ctor, restMs>, (Methods)`<Method m><Method* ms>` )
-	= <m,methods>
+		(Statement)`class <Id name> { <Methods ms> }` := class,
+		Statement ssr := desugarClassDeclaration( name, (Constructor)`constructor() {}`, ms );
+		
+Statement desugar( Statement class )
+	= ssr
 	when
-		(Method)`constructor(<{Id ","}* _>) { <Statement* _> }` := m,
-		Methods methods := (Methods)`<Method* restMs><Method* ms>`;
+		(Statement)`class <Id name> { <Constructor ctor> <Methods ms> }` := class,
+		Statement ssr := desugarClassDeclaration( name, ctor, ms );
 
-private Function ctorFunction( Id name, {Id ","}* ps, Statement* body ) 
-	= (Function)
-	`function <Id name>(<{Id ","}* ps>) { 
-		'_classCallCheck(this,<Expression name>); 
-		'<Statement* body> 
-	'}`;
+private Statement ctor2Function( Id name, {Id ","}* ps, Statement* body ) 
+	= (Statement)`function <Id name>(<{Id ","}* ps>) { _classCallCheck(this,<Expression name>); <Statement* body> }`;
 
-private Statement desugarClassDeclaration( Id name, Method ctor, Methods ms )
-	= (Statement)`var <Id name> = (function() { 
-				 '<Statement ctorFunction> 
-				 '<Statement* methods> 
-				 'return <Expression name>; 
-				 '})();`
+private Statement desugarClassDeclaration( Id name, Constructor ctor, Methods ms )
+	= makeClassDeclaration( name, ctorFunction, methods, ret )
 	when
-		(Method)`constructor(<{Id ","}* ps>) { <Statement* body> }` := ctor,
+		(Constructor)`constructor(<{Id ","}* ps>) { <Statement* body> }` := ctor,
 		Statement* desugaredBody := desugarSuperConstructorCall( name, body ),
 		Statement* methods := desugarMethods( name, ms ),
-		Function ctorFunction := ctorFunction( name, ps, desugaredBody );
+		Statement ctorFunction := ctor2Function( name, ps, desugaredBody ),
+		Statement ret := (Statement)`return <Expression name>;`;
+
+private default Statement makeClassDeclaration( Id name, Statement ctor, Statement* methods, Statement ret )
+	= (Statement)`var <Id name> = (function() { <Statement ctor> <Statement* methods> <Statement ret> })();`;
+
+private Statement makeClassDeclaration( Id name, Statement ctor, Statement* methods, Statement ret ) 
+	= (Statement)`var <Id name> = (function() { <Statement ctor> <Statement ret> })();`
+	when
+		(Statement)`{}` := (Statement)`{ <Statement* methods> }`; 
 
 private Statement* desugarMethods( Id name, (Methods)`` ) = stmEmpty();
 private Statement* desugarMethods( Id name, (Methods)`<Method m><Method* ms>` )
@@ -71,6 +68,10 @@ private Statement* desugarSuper( Id name, Statement* stms ) {
 		case
 			(Expression)`super.<Id call>(<{Expression ","}* args>)`
 			=>
-			(Expression)`_get(Object.getPrototypeOf(<Expression name>.prototype), <Expression call>, this).call(this, <{Expression ","}* args>)`
+			(Expression)`_get(Object.getPrototypeOf(<Expression name>.prototype), "<DoubleStringChar call>", this).call(this, <{Expression ","}* args>)`
+		case
+			e:(Expression)`super(<{Expression ","}* _>)`
+			=>
+			e[@message = error( "Direct super call is illegal in non-constructor, use super.\"<name>\"()", e@\loc )]
 	}
 }
