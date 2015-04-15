@@ -62,7 +62,6 @@ syntax VariableDeclarationNoIn
   | nonInit: Id id
   ;
 
-
 syntax CaseClause 
   = caseOf: "case" Expression ":" Statement*
   | defaultCase: "default" ":" Statement*
@@ -80,7 +79,7 @@ syntax Expression
   = array: "[" {Expression ","}*  ","? "]"
   | objectDefinition:"{" {PropertyAssignment ","}* ","? "}"
   | this: "this"
-  | var: IdName 
+  | var: Id 
   | literal: Literal
   | bracket \bracket: "(" Expression ")" 
   | function: Function
@@ -160,7 +159,7 @@ syntax VarDecl
   
 
 syntax PropertyName
- = IdName
+ = Id
  | String
  | Numeric
  ;
@@ -336,13 +335,9 @@ layout LAYOUTLIST
   !>> "/*"
   !>> "//" ;
 
-lexical IdName
-	= ([a-zA-Z$_0-9] !<< [$_a-zA-Z] [a-zA-Z$_0-9]* !>> [a-zA-Z$_0-9])
+lexical Id
+	= ([a-zA-Z$_0-9] !<< [$_a-zA-Z] [a-zA-Z$_0-9]* !>> [a-zA-Z$_0-9]) \ Reserved
 	;
-
-lexical Id 
-  = IdName \ Reserved
-  ;
 
 keyword Reserved =
     "break" |
