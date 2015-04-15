@@ -1,6 +1,6 @@
 module extensions::arrow::Test
 extend desugar::Runner;
-extend \test::Base2;
+extend \test::Base;
 
 import IO;
 
