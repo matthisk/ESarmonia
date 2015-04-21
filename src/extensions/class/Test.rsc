@@ -1,5 +1,5 @@
 module extensions::class::Test
-extend desugar::Runner;
+extend desugar::Visitor;
 extend \test::Base;
 
 import extensions::class::Syntax;
@@ -65,19 +65,19 @@ test bool desugaringClassDeclarations() {
 		
 		\it("is desugared with an empty body", tryDesugar("class Name { }", [
 			
-			< "var Name = function Name() { classCallCheck(this,Name) };", 
-			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } <Statement _> })();` := pt; } >
+			< "var Name = (function() { function Name() { classCallCheck(this,Name) }; return Name; }", 
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { _classCallCheck(this,Name); } return Name; })();` := pt; } >
 			
 		]) ),
 		
 		\it("is desugared with an empty constructor", tryDesugar("class Name { constructor() {} }", [
 			
 			< "var Name = (function() { function Name() { \<Statement* _\> } return Name; })();", 
-			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } <Statement _> })();` := pt; } >
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } return Name; })();` := pt; } >
 			
 		]) ),
 		
-		\it("is desugared with methods", tryDesugar(
+		\it("is desugared with methods", tryDesugar( 
 			"class Name { 
 			'	constructor() { } 
 			'	adder( x, y ) { 
@@ -86,7 +86,7 @@ test bool desugaringClassDeclarations() {
 			'}", [
 			
 			< "var Name = (function() { function Name() { \<Statement* _\> } Name.prototype.adder = function( x, y ) { return x + y; }; return Name; })();", 
-			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } Name.prototype.adder = function( x, y ) { return x + y; }; <Statement _> })();` := pt; } 
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } Name.prototype.adder = function( x, y ) { return x + y; }; return Name; })();` := pt; } 
 			>
 			
 		]) ),

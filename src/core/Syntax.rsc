@@ -68,15 +68,27 @@ syntax CaseClause
   ;
    
 syntax Function
-  = "function" Id name "(" {Id ","}* parameters ")" "{" Statement* "}"
-  | "function" "(" {Id ","}* parameters ")" "{" Statement* "}"
+  = "function" Id name "(" Params parameters ")" "{" Statement* "}"
+  | "function" "(" Params parameters ")" "{" Statement* "}"
   ;
+
+syntax Params
+	= {Param ","}*
+	;
+
+syntax Param
+	= Id
+	;
+
+syntax ArgExpression
+	= Expression
+	;
 
 // Todo: Check associativity https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
 // Todo: Right now you can put any type of Expression on the lhs of a variableAssignment like: 5 = y; We only want to do this for a few cases however
 // Rather than exclude everything other than those cases it would be much easier to whitelist the few that ARE allowed.
 syntax Expression
-  = array: "[" {Expression ","}*  ","? "]"
+  = array: "[" {ArgExpression ","}*  ","? "]"
   | objectDefinition:"{" {PropertyAssignment ","}* ","? "}"
   | this: "this"
   | var: Id 
@@ -84,7 +96,7 @@ syntax Expression
   | bracket \bracket: "(" Expression ")" 
   | function: Function
   > property: Expression "." Id 
-  | call: Expression "(" { Expression ","}* ")" 
+  | call: Expression "(" { ArgExpression ","}* ")" 
   | member: Expression "[" Expression "]" 
   > new: "new" Expression
   > postIncr: Expression "++"
@@ -137,7 +149,7 @@ syntax Expression
   > left or: Expression "||" Expression
   > cond: Expression!cond "?" Expression!cond ":" Expression
   > right (
-      assign: Expression "=" !>> ([=][=]?) Expression
+      assign: Expression!array!objectDefinition "=" !>> ([=][=]?) Expression
     | assignMul: Expression "*=" Expression
     | assignDiv: Expression "/=" Expression
     | assignRem: Expression "%=" Expression

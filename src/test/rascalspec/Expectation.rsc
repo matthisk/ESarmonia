@@ -1,4 +1,5 @@
 module \test::rascalspec::Expectation
+extend util::Maybe;
 
 import Prelude;
 
@@ -13,14 +14,29 @@ public data Expectation
 		bool( num i ) toBeGreaterThan,
 		bool() toThrow,
 		
-		Expectation( tuple[bool,&T]( &T ) ) toDeepMatch,
+		Expectation( type[&Z], Maybe[&Z]( &T ) ) toDeepMatch,
 		Expectation() not
 	);
 
 public bool id( bool i ) = i;
 public bool not( bool i ) = !i;
 
-public Expectation expect( &T input, bool(bool i) modifier = id ) {
+public Expectation expect( nothing(), bool(bool i) modifier = id ) {
+	return expectation(
+		bool( &T v) { return modifier( false ); }, 
+		bool( str _, bool( &T ) _ ) { return modifier( false ); },
+		bool( &Y match ) { return modifier( false ); },
+		bool( num i ) { return modifier( false ); },
+		bool( num i ) { return modifier( false ); },
+		bool() { return modifier( false ); },
+		
+		Expectation( type[&Z] _, Maybe[&Z]( &T ) _ ) { return expect( nothing() ); },
+		Expectation() { return expect( nothing(), modifier = not ); }
+	);
+}
+public Expectation expect( just( input ), bool(bool i) modifier = id ) = expect( input, modifier = modifier );
+
+public default Expectation expect( &T input, bool(bool i) modifier = id ) {
 	
 	bool toBe( &T match ) {
 		if( modifier( input != match ) ) {
@@ -36,13 +52,8 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		if( result ) {
 			s = "<input>";
 			
-			print(4,"Expected \'<pattern>\' <modifier == not ? "not " : "">to be matched in: ");
-			if( /\n/ := s ) {
-				println();
-				println(6,s);
-			} else {
-				println(s);
-			}
+			println(4,"Expected \'<pattern>\' <modifier == not ? "not " : "">to be matched in: ");
+			println(14,s);
 			
 		}
 		
@@ -85,7 +96,7 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 			try fun();
 			catch exception: {
 				thrw = false;
-				println(4,"<exception>");
+				if( modifier == not ) { println( 4, "<exception>" ); }
 			}
 			
 			if( modifier( thrw ) ) {
@@ -98,14 +109,14 @@ public Expectation expect( &T input, bool(bool i) modifier = id ) {
 		return call( input ); 
 	}
 	
-	Expectation toDeepMatch( tuple[bool,&T]( &T ) matcher ) {
-		< success, match > = matcher( input );
+	Expectation toDeepMatch( type[&Z] _, Maybe[&Z]( &T ) matcher ) {
+		match = matcher( input );
 		
-		if( modifier( ! sucess ) ) {
+		if( modifier( nothing() := match ) ) {
 			println(4,"Expected a match <modifier == not ? "not " : "">to be matched in: <input>");
 		}
 			
-		return expect( match );
+		return expect( match, modifier = modifier );
 	}
 	
 	Expectation notModifier() { 

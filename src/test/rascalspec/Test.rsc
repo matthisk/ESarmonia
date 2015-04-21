@@ -31,7 +31,7 @@ void testSomething() {
 			return and([
 				expect(message).toMatch("/bar/", bool(input) { return /bar/ := input; }),
 				expect(message).not().toMatch("bar", bool(input) { return "bar" := input; }),
-				expect(message).toMatch("/quux/", bool(input) { return /quux/ := input; })
+				expect(message).not().toMatch("/quux/", bool(input) { return /quux/ := input; })
 			]);
 		}),
 		
@@ -83,16 +83,20 @@ void testSomething() {
 			list[list[int]] xs = [ [1,2,3], [4,5,6] ];
 			
 			return
-			expect( xs ).toDeepMatch( tuple[bool,list[int]]( xs ) {
-				if( [ list[int] x, list[int] y ] := xs ) {
-					return < true, x >;
-				} else {
-					return < false, [] >;
-				}
-			}).toBe([1,2,3]);
+			expect( xs ).toDeepMatch( #list[int], deepMatchList ).toBe([1,2,3]);
+		}),
+		
+		\it("The \'toDeepMatch\' matcher is for matching on something and then mathing on the matched result", bool() {
+			list[int] xs = [ 1,2,3,4,5,6 ];
+			
+			return
+			expect( xs ).not().toDeepMatch( #list[int], deepMatchList ).toBe([1,2,3]);
 		})
 		
 		];
 	});
 	
 }
+
+default Maybe[list[int]] deepMatchList( _ ) = nothing();
+Maybe[list[int]] deepMatchList( [ list[int] x, list[int] y ] ) = just( x );

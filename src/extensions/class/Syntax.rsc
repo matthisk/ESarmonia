@@ -10,11 +10,11 @@ syntax Methods
 	;
 	
 syntax Constructor
-	= "constructor" "(" {Id ","}* params ")" "{" Statement* body "}"
+	= "constructor" "(" Params ")" "{" Statement* body "}"
 	;
 
 syntax Method
-	= Modifier? modifier Id name \ "constructor" "(" {Id ","}* params ")" "{" Statement* body "}"
+	= Modifier? modifier Id name \ "constructor" "(" Params ")" "{" Statement* body "}"
 	;
 	
 syntax Modifier
@@ -24,6 +24,6 @@ syntax Modifier
 	;
 	
 syntax Expression
-	= "super" "(" {Expression ","}* ")"
+	= "super" "(" {ArgExpression ","}* ")"
 	| "super" "." Id
 	;

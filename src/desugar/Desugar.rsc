@@ -8,9 +8,27 @@ default Expression desugar( Expression e ) = e;
 default Function desugar( Function f ) = f;
 default Source desugar( Source src ) = src;
 
-private {Id ","}* psEmpty()
+
+private Statement* statementStar( Statement s ) 
+	= result
+	when
+		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement s> }`;
+
+private Statement* prepend( Statement s, Statement* ss )
+	= result
+	when
+		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement s> <Statement* ss> }`;
+
+private Statement* concat( Statement* strt, Statement* rest )
+	= result
+	when
+		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement* strt> <Statement* rest> }`;  
+
+private Params params( {Param ","}* ps ) = (Params)`<{Param ","}* ps>`;
+
+private {Param ","}* psEmpty()
 	= empty
-	when (Function)`function(<{Id ","}* empty>) {}` := (Function)`function() {}`;
+	when (Function)`function(<{Param ","}* empty>) {}` := (Function)`function() {}`;
 		
 private Statement* stmEmpty()
 	= empty

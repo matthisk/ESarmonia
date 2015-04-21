@@ -1,5 +1,5 @@
 module extensions::arrow::Test
-extend desugar::Runner;
+extend desugar::Visitor;
 extend \test::Base;
 
 import IO;

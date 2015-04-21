@@ -1,4 +1,4 @@
-module desugar::Runner
+module desugar::Visitor
 
 import core::Syntax;
 
