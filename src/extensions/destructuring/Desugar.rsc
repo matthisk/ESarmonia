@@ -38,13 +38,13 @@ of using the shift function.
 }
 private Source desugarExpressionAssignmentPatterns( Source src ) {
 	return bottom-up visit( src ) {
-		case (Expression)`[<{ArgExpression ","}* args>] = <Expression ref>`
+		case (Expression)`[<{ArgExpression ","}* args>] = <Expression val>`
 			=>
 			(Expression)`<Expression e>.shift()`
 		when
 			str pattern := "<(Expression)`[<{ArgExpression ","}* args>]`>",
 			AssignmentPattern pattern := [AssignmentPattern]"<pattern>",
-			list[Expression] destructure := destructureAssignmentPattern( ref, pattern ),
+			list[Expression] destructure := destructureAssignmentPattern( val, pattern ),
 			(Expression) e := convertToCSArray( destructure )
 	}
 }
