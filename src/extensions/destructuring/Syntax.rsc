@@ -5,10 +5,6 @@ syntax Param
 	= AssignmentPattern
 	;
 
-syntax Expression
-	= assign: AssignmentPattern "=" !>> ([=][=]?) Expression
-	;
-
 syntax VariableDeclaration 
   = init: AssignmentPattern "=" Expression exp
   ;
