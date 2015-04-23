@@ -3,8 +3,15 @@ extend core::Syntax;
 
 syntax Param
 	= AssignmentPattern
-	;
+	; 
 
+syntax Expression
+	= right( 
+	  	  assign: ArrayDestructure!base "=" !>> ([=][=]?) Expression
+		| assign: ObjectDestructure "=" !>> ([=][=]?) Expression 
+	)
+	;
+	
 syntax VariableDeclaration 
   = init: AssignmentPattern "=" Expression exp
   ;
@@ -19,8 +26,8 @@ syntax AssignmentPattern
 	;
 	
 syntax ArrayDestructure
-	= "[" {AssignmentElement ","}* ","? "]"
-	| "[" {AssignmentElement ","}* "," "..."Id "]"
+	= base: "[" {AssignmentElement ","}* ","? "]"
+	| rest: "[" {AssignmentElement ","}* "," "..."Id ","? "]"
 	;
 
 syntax ObjectDestructure
