@@ -5,29 +5,24 @@ import IO;
 import extensions::destructuring::Syntax;
 import extensions::destructuring::desugar::Util;
 
-list[Expression] destructureArray( &T <: Tree original, Id name, int nesting, ArrayDestructure pattern )
-	= destructurePattern( assignment( name, original, pattern ), name, name, nesting, pattern );
+list[Expression] destructureArray( Expression original, Id name, int nesting, ArrayDestructure pattern )
+	= assignment( name, original, pattern ) + destructurePattern( name, name, nesting, pattern );
 
 // assignment
 private Expression assignment( Id name, arr:(Expression)`[ <{ArgExpression ","}* args> ]`, _ )
 	= (Expression)`<Id name> = <Expression arr>`;
-private default Expression assignment( Id name, Expression val, ArrayDestructure pattern )
-	= (Expression)`<Id name> = _slicedToArray( <Expression val>, <Expression size> )`
+private default Expression assignment( Id name, Expression original, ArrayDestructure pattern )
+	= (Expression)`<Id name> = _slicedToArray( <Expression original>, <Expression size> )`
 	when Expression size := size( pattern );
-private default Expression assignment( Id name, Id original, ArrayDestructure pattern )
-	= (Expression)`<Id name> = _slicedToArray( <Id original>, <Expression size> )`
-	when Expression size := size( pattern ); 
-private Expression assignment( Id name, Id original, (ArrayDestructure)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
-	= (Expression)`<Id name> = _toArray( <Id original> )`;
-private Expression assignment( Id name, Expression val, (ArrayDestructure)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
-	= (Expression)`<Id name> = _slicedToArray( <Expression val> )`;
+private Expression assignment( Id name, Expression original, (ArrayDestructure)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
+	= (Expression)`<Id name> = _slicedToArray( <Expression original> )`;
 	
 // destructurePattern
-private default list[Expression] destructurePattern( Expression assignment, Id original, Id name, int nesting, ArrayDestructure pattern )
-	= assignment + destructure
+private default list[Expression] destructurePattern( Id original, Id name, int nesting, ArrayDestructure pattern )
+	= destructure
 	when list[Expression] destructure := destructuring( original, name, nesting, 0, pattern );
-private list[Expression] destructurePattern( Expression assignment, Id original, Id name, int nesting, pattern:(ArrayDestructure)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
-	= assignment + destructure + remainder
+private list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:(ArrayDestructure)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
+	= destructure + remainder
 	when
 		ArrayDestructure strippedPattern := (ArrayDestructure)`[ <{AssignmentElement ","}* ps> ]`, 
 		Expression size := [Expression]"<sizeArrayDestructure(strippedPattern)>",
