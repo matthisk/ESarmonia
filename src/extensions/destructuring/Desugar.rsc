@@ -101,8 +101,5 @@ private Statement* convertToStatementStar( list[Expression] es ) {
 	return result;
 }
 
-private list[Expression] destructureAssignmentPattern( Expression original, Id ref, (AssignmentPattern)`<ObjectDestructure des>` )
-	= destructureObject( original, ref, 1, pattern );
-
-private list[Expression] destructureAssignmentPattern( Expression original, Id ref, (AssignmentPattern)`<ArrayDestructure pattern>` )
-	= destructureArray( original, ref, 1, pattern );
+private list[Expression] destructureAssignmentPattern( Expression original, Id ref, AssignmentPattern pattern )
+	= destructure( original, ref, 1, pattern );

@@ -38,6 +38,7 @@ syntax AssignmentProperty
 	= Id
 	| Id ":" Id
 	| Id ":" AssignmentPattern
+	| Id "=" Expression
 	;	
 
 syntax AssignmentElement

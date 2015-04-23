@@ -5,6 +5,7 @@ import ParseTree;
 import Ambiguity;
 import \test::rascalspec::RascalSpec;
 import \test::rascalspec::Expectation;
+import \test::rascalspec::Util;
 
 bool and( list[bool] l ) = ( true | it && elm | elm <- l );
 
@@ -36,7 +37,13 @@ private Spec trySomething( str input, list[tuple[str,bool(start[Source])]] fs, s
 	return bool() {
 		try {
 			pt = m( parse( #start[Source], input ) );
-			return and([ expect( pt ).toMatch(s, f) | <s,f> <- fs]);
+			println( 6, input );
+			result = and([ expect( pt ).toMatch(s, f) | <s,f> <- fs]);
+			
+			if( ! result && and([ "<pt>" == s | <s,f> <- fs]) ) {
+				println( 4, "However all strings of the patterns do match!" );
+			}
+			return result;
 		} catch exception : {
 			println( "failed with parse error: <exception>" );
 			return false;

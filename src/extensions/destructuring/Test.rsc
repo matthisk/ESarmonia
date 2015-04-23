@@ -83,6 +83,35 @@ test bool parsingArrayDestructure() {
 	]);
 }
 
+test bool desugarObjectDestructure() {
+	return
+	describe( "Desugaring object destructurings", [
+		\it( "as var declaration", tryDesugar( 
+			"var {a,b} = {a:1,b:2};",
+			[<"{ var _ref = {a:1,b:2}; var a = _ref.a; var b = _ref.b; }",
+			 bool(pt) { return /(Statement)`{ var _ref = {a:1,b:2}; var a = _ref.a; var b = _ref.b; }` := pt; }>]
+		)),
+		
+		\it( "as var declaration with default value", tryDesugar(
+			"var {a=10,b} = {b:0};",
+			[<"{ var _ref = {b:0}; var a = _ref.a === undefined ? 10 : _ref.a; var b = _ref.b; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {b:0}; var a = _ref.a === undefined ? 10 : _ref.a; var b = _ref.b; }` := pt; }>]
+		)),
+		
+		\it( "as a var declaration with key value", tryDesugar(
+			"var {a:b} = {a:10};",
+			[<"{ var _ref = {a:10}; var b = _ref.a; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {a:10}; var b = _ref.a; }` := pt; }>]
+		)),
+		
+		\it( "as a var declaration with nested destructurings", tryDesugar(
+			"var {a:{b}} = {a:{b:10}};",
+			[<"{ var _ref = {a:{b:10}}; var a = _ref.a; var b = a.b; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {a:{b:10}}; var a = _ref.a; var b = a.b; }` := pt; }>]
+		))
+	]);
+}
+
 test bool desugarArrayDestructure() {
 	return
 	describe( "Desugaring array destructurings", [
@@ -97,49 +126,51 @@ test bool desugarArrayDestructure() {
 		\it( "as nested pattern expression assignment", tryDesugar(
 			"var a,b,c,d;
 			'[a,[c,d]] = [1,[2,3]];",
-			[<"[ref = [1,[2,3]], a = ref[0], ref$1 = _slicedToArray( ref[1], 2 ), c = ref$1[0], d = ref$1[1] ].shift();",
-			  bool(pt) { return /(Statement)`[ref = [1,[2,3]], a = ref[0], ref$1 = _slicedToArray( ref[1], 2 ), c = ref$1[0], d = ref$1[1] ].shift();` := pt; }>]
+			[<"[_ref = [1,[2,3]], a = _ref[0], _ref$1 = _slicedToArray( _ref[1], 2 ), c = _ref$1[0], d = _ref$1[1] ].shift();",
+			  bool(pt) { return /(Statement)`[_ref = [1,[2,3]], a = _ref[0], _ref$1 = _slicedToArray( _ref[1], 2 ), c = _ref$1[0], d = _ref$1[1] ].shift();` := pt; }>]
 		) ),
 		
 		\it( "as expression assignment, with rest value", tryDesugar(
 			"[a, ...rest] = [1,2,3,4,5];",
-			[<"[ref=[1,2,3,4,5],a=ref[0],rest=ref.slice(1)]",
-			  bool(pt) { return /(Expression)`[ref=[1,2,3,4,5],a=ref[0],rest=ref.slice(1)]` := pt; }>]
+			[<"[_ref=[1,2,3,4,5],a=_ref[0],rest=_ref.slice(1)]",
+			  bool(pt) { return /(Expression)`[_ref=[1,2,3,4,5],a=_ref[0],rest=_ref.slice(1)]` := pt; }>]
 		)),
 	
 		\it( "as a left hand side expression", tryDesugar(
 			"var x = 10, y = 12;
 			'[x,y] = [y,x];",
-			[<"[ref=[y,x], x = ref[0], y = ref[1]].shift();",
-			  bool(pt) { return /(Statement)`[ref=[y,x], x = ref[0], y = ref[1]].shift();` := pt; }>]
+			[<"[_ref=[y,x], x = _ref[0], y = _ref[1]].shift();",
+			  bool(pt) { return /(Statement)`[_ref=[y,x], x = _ref[0], y = _ref[1]].shift();` := pt; }>]
 		) ),
 		
 		\it( "as a variable declaration", tryDesugar(
 			"var [x,y] = [10,12];",
-			[<"{ var ref = [10,12]; var x = ref[0]; var y = ref[1]; }",
-			  bool(pt) { return /(Statement)`{ var ref = [10,12]; var x = ref[0]; var y = ref[1]; }` := pt; }>]
+			[<"{ var _ref = [10,12]; var x = _ref[0]; var y = _ref[1]; }",
+			  bool(pt) { return /(Statement)`{ var _ref = [10,12]; var x = _ref[0]; var y = _ref[1]; }` := pt; }>]
 		) ),
 		
 		\it( "as a function parameter", tryDesugar(
 			"function( [ a, b, c ] ) {
 			'  return a + b + c;
 			'}",
-			[<"function( _arg0 ) { var _arg02 = _slicedtoArray( _arg0, 3 ); var a = _arg02[0]; var b = _arg02[1]; var c = _arg02[2]; return a + b + c ; }",
-			  bool(pt) { return /(Function)`function( _arg0 ) { var _arg02 = _slicedtoArray( _arg0, 3 ); var a = _arg02[0]; var b = _arg02[1]; var c = _arg02[2]; return a + b + c ; }` := pt; }>]
+			[<"function( _arg0 ) { var _arg02 = _slicedToArray( _arg0, 3 ); var a = _arg02[0]; var b = _arg02[1]; var c = _arg02[2]; return a + b + c; }",
+			  bool(pt) { return /(Function)`function( _arg0 ) { var _arg02 = _slicedToArray( _arg0, 3 ); var a = _arg02[0]; var b = _arg02[1]; var c = _arg02[2]; return a + b + c; }` := pt; }>]
 		)),
 		
 		\it( "as a function parameter, multiple times", tryDesugar(
 			"function( [ a, b, c ], [ d, e ] ) {
 			'  return a + b + c + d + e;
 			'}",
-			[<"",bool(pt) { return false; }>]
+			[<"function( _arg1, _arg0 ) { var _arg02 = _slicedToArray( _arg0, 2 ); var d = _arg02[0]; var e = _arg02[1]; var _arg12 = _slicedToArray( _arg1, 3 ); var a = _arg12[0]; var b = _arg12[1]; var c = _arg12[2]; return a + b + c + d + e; }",
+			  bool(pt) { return /(Statement)`function( _arg1, _arg0 ) { var _arg02 = _slicedToArray( _arg0, 2 ); var d = _arg02[0]; var e = _arg02[1]; var _arg12 = _slicedToArray( _arg1, 3 ); var a = _arg12[0]; var b = _arg12[1]; var c = _arg12[2]; return a + b + c + d + e; }` := pt; }>]
 		)),
 		
 		\it( "as a function parameter, with nested destructurings", tryDesugar(
 			"function( [ a, [ d, e ] ] ) {
 			'  return a + d + e;
 			'}",
-			[<"",bool(pt) { return false; }>]
+			[<"function( _arg0 ) { var _arg02 = _slicedToArray( _arg0, 2 ); var a = _arg02[0]; var _arg02$1 = _slicedToArray( _arg02[1], 2 ); var d = _arg02$1[0]; var e = _arg02$1[1]; return a + d + e; }",
+			  bool(pt) { return /(Statement)`function( _arg0 ) { var _arg02 = _slicedToArray( _arg0, 2 ); var a = _arg02[0]; var _arg02$1 = _slicedToArray( _arg02[1], 2 ); var d = _arg02$1[0]; var e = _arg02$1[1]; return a + d + e; }` := pt; }>]
 		)),
 		
 		\it( "as a function parameter, with rest value", tryDesugar(
