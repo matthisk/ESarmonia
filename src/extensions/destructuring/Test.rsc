@@ -85,20 +85,27 @@ test bool desugarArrayDestructure() {
 			[<"",
 			  bool(pt) { return false; }>]
 		) ),
+		
+		\it( "as nested pattern expression assignment", tryDesugar(
+			"var a,b,c,d;
+			'[a,[c,d]] = [1,[2,3]];",
+			[<"",
+			  bool(pt) { return false; }>]
+		) ),
 	
-		\xit( "as a left hand side expression", tryDesugar(
+		\it( "as a left hand side expression", tryDesugar(
 			"var x = 10, y = 12;
 			'[x,y] = [y,x];",
 			[<"{ var ref = [y,x]; var x = ref[0]; var y = ref[1]; }",bool(pt) { return /(Statement)`{ var ref = [y,x]; var x = ref[0]; var y = ref[1]; }` := pt; }>]
 		) ),
 		
-		\xit( "as a variable declaration", tryDesugar(
+		\it( "as a variable declaration", tryDesugar(
 			"var [x,y] = [10,12];",
 			[<"{ var ref = [10,12]; var x = ref[0]; var y = ref[1]; }",
 			  bool(pt) { return /(Statement)`{ var ref = [10,12]; var x = ref[0]; var y = ref[1]; }` := pt; }>]
 		) ),
 		
-		\xit( "as a function parameter", tryDesugar(
+		\it( "as a function parameter", tryDesugar(
 			"function( [ a, b, c ] ) {
 			'  return a + b + c;
 			'}",
@@ -106,21 +113,21 @@ test bool desugarArrayDestructure() {
 			  bool(pt) { return /(Function)`function( _ref0 ) { var _ref02 = _slicedtoArray( _ref0, 3 ); var a = _ref02[0]; var b = _ref02[1]; var c = _ref02[2]; return a + b + c ; }` := pt; }>]
 		)),
 		
-		\xit( "as a function parameter, multiple times", tryDesugar(
+		\it( "as a function parameter, multiple times", tryDesugar(
 			"function( [ a, b, c ], [ d, e ] ) {
 			'  return a + b + c + d + e;
 			'}",
 			[<"",bool(pt) { return false; }>]
 		)),
 		
-		\xit( "as a function parameter, with nested destructurings", tryDesugar(
+		\it( "as a function parameter, with nested destructurings", tryDesugar(
 			"function( [ a, [ d, e ] ] ) {
 			'  return a + d + e;
 			'}",
 			[<"",bool(pt) { return false; }>]
 		)),
 		
-		\xit( "as a function parameter, with rest value", tryDesugar(
+		\it( "as a function parameter, with rest value", tryDesugar(
 			"function( [a, ...rest] ) {
 			'
 			'}",

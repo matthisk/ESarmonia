@@ -14,6 +14,11 @@ private Statement* statementStar( Statement s )
 	when
 		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement s> }`;
 
+private Statement* \append( Statement* ss, Statement s )
+	= result
+	when
+		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement* ss> <Statement s> }`;
+
 private Statement* prepend( Statement s, Statement* ss )
 	= result
 	when

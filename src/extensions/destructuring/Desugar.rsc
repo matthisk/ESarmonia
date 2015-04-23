@@ -8,13 +8,14 @@ Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pa
 	= (Function)`function( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { <Statement* desBody> }`
 	when
 		int refs := nameRef( params( rest ) ),
-		Id ref := [Id]"_ref<refs>",
+		Id ref := [Id]"_param<refs>",
 		Statement* desBody := desugarBody( pattern, ref, body );
 
 Statement desugar( (Statement)`var <AssignmentPattern pattern> = <Expression val>;` )
 	= (Statement)`{ <Statement* result> }`
 	when
-		Statement* result := destructureAssignmentPattern( val, pattern ); 
+		list[Expression] destructure := destructureAssignmentPattern( val, pattern ), 
+		Statement* result := convertToStatementStar( destructure );
 
 Source desugar( Source src ) 
 	= desugarExpressionAssignmentPatterns( src )
@@ -37,7 +38,7 @@ This solution will in the end be somewhat slower when interpreted by your js eng
 of using the shift function.
 }
 private Source desugarExpressionAssignmentPatterns( Source src ) {
-	return bottom-up visit( src ) {
+	return visit( src ) {
 		case (Expression)`[<{ArgExpression ","}* args>] = <Expression val>`
 			=>
 			(Expression)`<Expression e>.shift()`
@@ -61,10 +62,22 @@ Expression convertToCSArray( list[Expression] es ) {
 	return result;
 }
 
+Statement* convertToStatementStar( list[Expression] es ) {
+	Statement* result = stmEmpty();
+	
+	for( (Expression)`<Id var> = <Expression val>` <- es ) {
+		Statement variable = (Statement)`var <Id var> = <Expression val>;`;
+		result = \append( result, variable );
+	}
+	
+	return result;
+}
+
 private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
-	= concat( destructure, body )
+	= concat( result, body )
 	when
-		Statement* destructure := destructureAssignmentPattern( ref, pattern );
+		list[Expression] destructure := destructureAssignmentPattern( ref, pattern ),
+		Statement* result := convertToStatementStar( destructure );
 		
 private default int nameRef( (Params)`` ) = 0;
 private default int nameRef( (Params)`<Param p>,<{Param ","}* ps>` ) = nameRef( params( ps ) );
@@ -89,7 +102,7 @@ private list[Expression] initializeArrayDestructure( Expression original, Id ref
 	when 
 		Expression size := [Expression]"<sizeArrayDestructure( destructure )>";
 private list[Expression] initializeArrayDestructure( Id originalRef, Id ref, int nesting, ArrayDestructure destructure )
-	= init( (Expression)`<Id ref> = _slicedToArray( <Id originalref>, <Expression size> )`, originalRef, ref, nesting, destructure )
+	= init( (Expression)`<Id ref> = _slicedToArray( <Id originalRef>, <Expression size> )`, originalRef, ref, nesting, destructure )
 	when Expression size := [Expression]"<sizeArrayDestructure( destructure )>";
 
 // init
@@ -115,40 +128,3 @@ private list[Expression] arrayElementDestructure( _, Id ref, _, Expression index
 		Expression refAtIndex := (Expression)`<Id ref>[<Expression index>]`;
 private list[Expression] arrayElementDestructure( Id originalRef, Id ref, int nesting, Expression index, (AssignmentElement)`<ArrayDestructure des>` )
 	= initializeArrayDestructure( (Expression)`<Id originalRef>[<Expression index>]`, [Id]"<ref>$<nesting>", nesting + 1, des );
-
-//// Destructure Array
-//private Statement* initializeArrayDestructure( arr:(Expression)`[ <{ArgExpression ","}* args> ]`, Id ref, int nesting, ArrayDestructure destructure )
-//	= result
-//	when
-//		Statement* destructure := arrayDestructure( ref, ref, nesting, 0, destructure ),
-//		(Statement)`{ <Statement* result> }` := (Statement)`{ <Id ref> = <Expression arr>; <Statement* destructure> }`;
-//private Statement* initializeArrayDestructure( Expression original, Id ref, int nesting, ArrayDestructure destructure )
-//	= result
-//	when
-//		Expression size := [Expression]"<sizeArrayDestructure( destructure )>",
-//		Statement* destructure := arrayDestructure( ref, ref, nesting, 0, destructure ),
-//		(Statement)`{ <Statement* result> }` := (Statement)`{ <Id ref> = _slicedToArray( <Expression original>, <Expression size> ); <Statement* destructure> }`;
-//private Statement* initializeArrayDestructure( Id originalRef, Id ref, int nesting, ArrayDestructure destructure )
-//	= result
-//	when
-//		Expression size := [Expression]"<sizeArrayDestructure( destructure )>",
-//		Statement* destructure := arrayDestructure( originalRef, ref, nesting, 0, destructure ),
-//		(Statement)`{ <Statement* result> }` := (Statement)`{ <Id ref> = _slicedToArray( <Id originalRef>, <Expression size>); <Statement* destructure> }`;
-//
-//private Statement* arrayDestructure( _, _, _, _, (ArrayDestructure)`[]` ) = stmEmpty();
-//private Statement* arrayDestructure( Id originalRef, Id ref, int nesting, int index, (ArrayDestructure)`[ <AssignmentElement p>, <{AssignmentElement ","}* ps> ]` )
-//	= concat( stms, rest )
-//	when
-//		Expression i := [Expression]"<index>",
-//		Statement* stms := arrayElementDestructure( originalRef, ref, nesting, i, p ),
-//		Statement* rest := arrayDestructure( originalRef, ref, nesting, index + 1, (ArrayDestructure)`[ <{AssignmentElement ","}* ps> ]` );
-//
-//// Destructure Array Element
-//private Statement* arrayElementDestructure( _, Id ref, _, Expression index, (AssignmentElement)`<Id pName>` )
-//	= statementStar( (Statement)`<Id pName> = <Id ref>[<Expression index>];` );
-//private Statement* arrayElementDestructure( _, Id ref, _, Expression index, (AssignmentElement)`<Id pName> = <Expression defaultValue>` )
-//	= statementStar( (Statement)`<Id pName> = <Expression refAtIndex> === undefined ? <Expression defaultValue> : <Expression refAtIndex>;` )
-//	when
-//		Expression refAtIndex := (Expression)`<Id ref>[<Expression index>]`;
-//private Statement* arrayElementDestructure( Id originalRef, Id ref, int nesting, Expression index, (AssignmentElement)`<ArrayDestructure des>` )
-//	= initializeArrayDestructure( (Expression)`<Id originalRef>[<Expression index>]`, [Id]"<ref>$<nesting>", nesting + 1, des );
