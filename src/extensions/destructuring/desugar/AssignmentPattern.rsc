@@ -40,24 +40,15 @@ private list[Expression] destructurePattern( Id original, Id name, int nesting, 
 
 // destructuring
 private list[Expression] destructuring( State s, AssignmentPattern pattern )
-	= f( s, pop( pattern ) );
+	= destructuringHelper( s, pop( pattern ) );
 
-private default list[Expression] f( _, false ) = [];
-private list[Expression] f( State s, <p,ps> )
+private default list[Expression] destructuringHelper( _, false ) = [];
+private list[Expression] destructuringHelper( State s, <p,ps> )
 	= elem + rest
 	when
 		AssignmentPattern restPattern := createPattern( ps ),
 		list[Expression] elem := assignmentDestructure( s, p ),
 		list[Expression] rest := destructuring( s[index=s.index+1], restPattern );
-
-default bool pop( _ ) = false;
-tuple[AssignmentElement,{AssignmentElement ","}*] pop( (AssignmentPattern)`[ <AssignmentElement p>,<{AssignmentElement ","}* ps> ]` ) = <p,ps>;
-tuple[AssignmentElement,{AssignmentElement ","}*] pop( (AssignmentPattern)`[ <AssignmentElement p>,<{AssignmentElement ","}* ps>, ]` ) = <p,ps>;
-tuple[AssignmentProperty,{AssignmentProperty ","}*] pop( (AssignmentPattern)`{ <AssignmentProperty p>,<{AssignmentProperty ","}* ps> }` ) = <p,ps>;
-tuple[AssignmentProperty,{AssignmentProperty ","}*] pop( (AssignmentPattern)`{ <AssignmentProperty p>,<{AssignmentProperty ","}* ps>, }` ) = <p,ps>;
-
-AssignmentPattern createPattern( {AssignmentElement ","}* ps ) = (AssignmentPattern)`[ <{AssignmentElement ","}* ps> ]`;
-AssignmentPattern createPattern( {AssignmentProperty ","}* ps ) = (AssignmentPattern)`{ <{AssignmentProperty ","}* ps> }`;
 
 // AssignmentDestructure
 private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Id pName>` )
