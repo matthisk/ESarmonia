@@ -1,4 +1,4 @@
-module extensions::destructuring::desugar::Array
+module extensions::destructuring::desugar::AssignmentPattern
 extend desugar::Desugar;
 
 import IO;

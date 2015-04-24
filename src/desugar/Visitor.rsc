@@ -6,7 +6,7 @@ import core::Syntax;
 start[Source] desugar( start[Source] pt ) = desugarVisitor( pt );
 
 &T <: Tree desugarVisitor( &T <: Tree pt ) {
-	return solve( pt ) {
+	pt = solve( pt ) {
 		pt = visit( pt ) {
 			case Source src => desugar( src )
 			case Function fun => desugar( fun )
@@ -14,4 +14,6 @@ start[Source] desugar( start[Source] pt ) = desugarVisitor( pt );
 			case Statement stm => desugar( stm )
 		}
 	};
+	
+	return declareVariables( pt );
 }

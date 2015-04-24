@@ -45,7 +45,7 @@ private Spec trySomething( str input, list[tuple[str,bool(start[Source])]] fs, s
 			}
 			return result;
 		} catch exception : {
-			println( "failed with parse error: <exception>" );
+			println( 4, "failed with parse error: <exception>" );
 			return false;
 		}
 	};

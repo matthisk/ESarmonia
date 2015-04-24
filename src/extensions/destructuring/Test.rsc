@@ -83,6 +83,29 @@ test bool parsingArrayDestructure() {
 	]);
 }
 
+test bool desugarObjectArrayDestructure() {
+	return
+	describe( "Desugaring nested object and array destructuring", [
+		\it( "arrays nested in objects", tryDesugar(
+			"var { a : [ b,c ] } = { a : [1,2] };",
+			[<"{ var _ref = { a : [1,2] }; var a = _slicedToArray( _ref.a, 2 ); var b = a[0]; var c = a[1]; }",
+			  bool(pt) { return /(Statement)`{ var _ref = { a : [1,2] }; var a = _slicedToArray( _ref.a, 2 ); var b = a[0]; var c = a[1]; }` := pt; }>]
+		)),
+		
+		\it( "objects nested in objects", tryDesugar(
+			"var [ a, { b,c } ] = [ 1, {b:2,c:3} ];",
+			[<"{ var _ref = [ 1, {b:2,c:3} ]; var a = _ref[0]; var _ref$1 = _ref[1]; var b = _ref$1.b; var c = _ref$1.c; }",
+			  bool(pt) { return /(Statement)`{ var _ref = [ 1, {b:2,c:3} ]; var a = _ref[0]; var _ref$1 = _ref[1]; var b = _ref$1.b; var c = _ref$1.c; }` := pt; }>]
+		)),
+		
+		\it( "objects nested in arrays as expression", tryDesugar(
+			"[a,{b,c}] = [1,{b:1,c:2}]",
+			[<"",
+			  bool(pt) { return false; }>]
+		))
+	]);
+}
+
 test bool desugarObjectDestructure() {
 	return
 	describe( "Desugaring object destructurings", [
@@ -108,6 +131,20 @@ test bool desugarObjectDestructure() {
 			"var {a:{b}} = {a:{b:10}};",
 			[<"{ var _ref = {a:{b:10}}; var a = _ref.a; var b = a.b; }",
 			  bool(pt) { return /(Statement)`{ var _ref = {a:{b:10}}; var a = _ref.a; var b = a.b; }` := pt; }>]
+		)),
+		
+		\it( "as a left hand side expression", tryDesugar(
+			"({a,b} = {a:1,b:2});",
+			[<"([_ref={a:1,b:2}, a = _ref.a, b = _ref.b ].shift());",
+			  bool(pt) { return /(Statement)`([_ref={a:1,b:2}, a = _ref.a, b = _ref.b ].shift());` := pt; }>]
+		)),
+		
+		\it( "as a function parameter", tryDesugar(
+			"function( {a,b} ) {
+			'	return a + b;
+			'}",
+			[<"function( _arg0 ) { var a = _arg0.a; var b = _arg0.b; return a + b; }",
+			  bool(pt) { return /(Function)`function( _arg0 ) { var a = _arg0.a; var b = _arg0.b; return a + b; }` := pt; }>]
 		))
 	]);
 }
@@ -180,8 +217,25 @@ test bool desugarArrayDestructure() {
 			[<"function( _arg0 ) { var _arg02 = _toArray( _arg0 ); var a = _arg02[0]; var rest = _arg02.slice(1); }",bool(pt) {
 				return /(Statement)`function( _arg0 ) { var _arg02 = _toArray( _arg0 ); var a = _arg02[0]; var rest = _arg02.slice(1); }` := pt;
 			}>]
-		))
+		)),
 		
+		\it( "with strings", tryDesugar(
+			"var [a,b] = \"ab\";",
+			[<"{ var _ref = _slicedToArray( \"ab\", 2 ); var a = _ref[0]; var b = _ref[1]; }",
+			  bool(pt) { return /(Statement)`{ var _ref = _slicedToArray( "ab", 2 ); var a = _ref[0]; var b = _ref[1]; }` := pt; }>]
+		)),
+		
+		\it( "trailing comma", tryDesugar(
+			"var [a,] = [1];",
+			[<"{ var _ref = [1]; var a = _ref[0]; }",
+			  bool(pt) { return /(Statement)`{ var _ref = [1]; var a = _ref[0]; }` := pt; }>]
+		)),
+		
+		\it( "rest value, trailing comma" , tryDesugar(
+			"var [a,...rest,] = [1,2,3,4,5];",
+			[<"{ var _ref = [1,2,3,4,5]; var a = _ref[0]; var rest = _ref.slice(1); }",
+			  bool(pt) { return /(Statement)`{ var _ref = [1,2,3,4,5]; var a = _ref[0]; var rest = _ref.slice(1); }` := pt; }>]
+		))
 	]);
 }
 
