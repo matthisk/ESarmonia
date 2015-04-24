@@ -146,6 +146,12 @@ test bool desugarObjectDestructure() {
 			  bool(pt) { return /(Statement)`([_ref = obj, a = _ref.a, b = _ref.b ].shift());` := pt; }>]
 		)),
 		
+		\it( "object destructuring with id as original", tryDesugar(
+			"var obj = {a:1,b:2}; var {a,b} = obj;",
+			[<"{ var a = obj.a; var b = obj.b; }",
+			  bool(pt) { return /(Statement)`{ var a = obj.a; var b = obj.b; }` := pt; }>]
+		)),
+		
 		\it( "as a function parameter", tryDesugar(
 			"function( {a,b} ) {
 			'	return a + b;
@@ -158,6 +164,36 @@ test bool desugarObjectDestructure() {
 			"var {a,} = {a:1};",
 			[<"{ var _ref = {a:1}; var a = _ref.a; }",
 			  bool(pt) { return /(Statement)`{ var _ref = {a:1}; var a = _ref.a; }` := pt; }>]
+		)),
+		
+		\it( "with integer as property name", tryDesugar(
+			"var {1:a} = {1:100};",
+			[<"{ var _ref = {1:100}; var a = _ref[1]; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {1:100}; var a = _ref[1]; }` := pt; }>]
+		)),
+		
+		\it( "with string as property name", tryDesugar(
+			"var {\"a\":a} = {\"a\" : 100 };",
+			[<"{ var _ref = {\"a\":100}; var a = _ref[\"a\"]; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {"a":100}; var a = _ref["a"]; }` := pt; }>]
+		)),
+		
+		\it( "with a computed property name", tryDesugar(
+			"var qux = \"aap\"; var { [qux] : a } = { \"aap\" : 100 };",
+			[<"var a = _ref[qux];",
+			  bool(pt) { return /(Statement)`var a = _ref[qux];` := pt; }>]
+		)),
+		
+		\it( "with a default value", tryDesugar(
+			"var {1:a=10} = obj;",
+			[<"var a = obj[1] === undefined ? 10 : obj[1];",
+			  bool(pt) { return /(Statement)`var a = obj[1] === undefined ? 10 : obj[1];` := pt; }>]
+		)),
+		
+		\it( "with comma separated var declarations", tryDesugar(
+			"var {a} = {a:1}, {b} = {b:2};",
+			[<"",
+			  bool(pt) { return false; }>]
 		))
 	]);
 }

@@ -178,10 +178,13 @@ syntax PropertyName
 
 syntax PropertyAssignment
   = property: PropertyName ":" Expression
-  | "get" PropertyName "(" ")" "{" Statement* "}"
-  | "set" PropertyName "(" Id ")" "{" Statement* "}"
+  | MethodDefinition
   ;
 
+syntax MethodDefinition
+  = "get" PropertyName "(" ")" "{" Statement* "}"
+  | "set" PropertyName "(" Id ")" "{" Statement* "}"
+  ;
 
 syntax Literal
  = "null"

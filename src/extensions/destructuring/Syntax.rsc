@@ -1,5 +1,6 @@
 module extensions::destructuring::Syntax
-extend core::Syntax;
+//extend core::Syntax;
+extend extensions::object::Syntax;
 
 syntax Param
 	= AssignmentPattern
@@ -36,8 +37,7 @@ syntax ObjectDestructure
 
 syntax AssignmentProperty
 	= Id
-	| Id ":" Id
-	| Id ":" AssignmentPattern
+	| PropertyName ":" AssignmentElement
 	| Id "=" Expression
 	;	
 

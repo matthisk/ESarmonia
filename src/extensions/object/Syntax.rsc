@@ -3,6 +3,12 @@ extend core::Syntax;
 
 syntax PropertyAssignment
 	= shorthand: Id
-	| method: Id name "(" Params ")" "{" Statement* body "}"
-	| computed: "[" Expression key "]" ":" Expression value
+	;
+
+syntax MethodDefinition
+	= PropertyName name "(" Params ")" "{" Statement* body "}"
+	; 
+	
+syntax PropertyName
+	= computed: "[" Expression key "]"
 	;

@@ -16,3 +16,15 @@ tuple[AssignmentProperty,{AssignmentProperty ","}*] pop( (AssignmentPattern)`{ <
 
 AssignmentPattern createPattern( {AssignmentElement ","}* ps ) = (AssignmentPattern)`[ <{AssignmentElement ","}* ps> ]`;
 AssignmentPattern createPattern( {AssignmentProperty ","}* ps ) = (AssignmentPattern)`{ <{AssignmentProperty ","}* ps> }`;
+
+Expression extractKey( (PropertyName)`<String s>` ) = (Expression)`<String s>`;
+Expression extractKey( (PropertyName)`<Numeric s>` ) = (Expression)`<Numeric s>`;
+Expression extractKey( (PropertyName)`[<Expression computed>]` ) = computed;
+
+Id extractName( (AssignmentElement)`<Id name>` ) = name;
+Id extractName( (AssignmentElement)`<Id name> = <Expression _>` ) = name;
+
+Expression extractInit( (AssignmentElement)`<Id _>`, Id name, Expression key ) 
+	= (Expression)`<Id name>[<Expression key>]`;
+Expression extractInit( (AssignmentElement)`<Id _> = <Expression def>`, Id name, Expression key )
+	= (Expression)`<Id name>[<Expression key>] === undefined ? <Expression def> : <Id name>[<Expression key>]`;

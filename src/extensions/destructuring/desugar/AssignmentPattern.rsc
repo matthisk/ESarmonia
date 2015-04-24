@@ -8,9 +8,9 @@ import extensions::destructuring::desugar::Util;
 
 alias State = tuple[ Id original, Id name, int nesting, int index ];
 
-default list[Expression] destructureFunctionParam( Expression original, Id name, int nesting, AssignmentPattern pattern )
+default list[Expression] destructureNoRef( Expression original, Id name, int nesting, AssignmentPattern pattern )
 	= destructure( original, name, nesting, pattern );
-list[Expression] destructureFunctionParam( (Expression)`<Id _>`, Id name, int nesting, pattern:(AssignmentPattern)`<ObjectDestructure _>` )
+list[Expression] destructureNoRef( (Expression)`<Id _>`, Id name, int nesting, pattern:(AssignmentPattern)`<ObjectDestructure _>` )
 	= destructurePattern( name, name, nesting, pattern ); 
 
 default list[Expression] destructure( Expression original, Id name, int nesting, AssignmentPattern pattern )
@@ -68,6 +68,7 @@ private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Id
 	when
 		Expression index := [Expression]"<s.index>",
 		Id name := s.name;
+
 private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<Id pName>` )
 	= [ (Expression)`<Id pName> = <Id name>.<Id pName>` ]
 	when
@@ -79,6 +80,7 @@ private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Id
 		Expression index := [Expression]"<s.index>",
 		Id name := s.name,
 		Expression refAtIndex := (Expression)`<Id name>[<Expression index>]`;
+
 private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<Id pName> = <Expression defaultValue>` )
 	= [ (Expression)`<Id pName> = <Expression ref> === undefined ? <Expression defaultValue> : <Expression ref>` ]
 	when
@@ -90,6 +92,24 @@ private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<I
 	when
 		Id name := s.name;
 
+private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<Id kName> : <Id vName> = <Expression def>` )
+	= [ (Expression)`<Id vName> = <Id name>.<Id kName> === undefined ? <Expression def> : <Id name>.<Id kName>` ]
+	when
+		Id name := s.name;
+
+private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<Id vName> = <Expression def>` )
+	= [ (Expression)`<Id vName> = <Id name>.<Id vName> === undefined ? <Expression def> : <Id name>.<Id vName>` ]
+	when
+		Id name := s.name;
+
+private default list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<PropertyName propertyName> : <AssignmentElement val>` )
+	= [ (Expression)`<Id vName> = <Expression init>` ]
+	when
+		Id name := s.name,
+		Id vName := extractName( val ),
+		Expression key := extractKey( propertyName ),
+		Expression init := extractInit( val, name, key );
+		
 private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<Id pName> : <AssignmentPattern pattern>` )
 	= destructure( (Expression)`<Id originalRef>.<Id pName>`, pName, s.nesting + 1, pattern )
 	when

@@ -21,20 +21,39 @@ Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pa
 private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, Id ref ) = ref;
 private default Id refName( AssignmentPattern _, Id ref ) = [Id]"<ref>2";
 
+private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, (Expression)`<Id ref>`, _ ) = ref;
+private Id refName( AssignmentPattern _, _, Id ref ) = ref;
+
 private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
 	= concat( result, body )
 	when
-		list[Expression] destructure := destructureFunctionParam( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
+		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
 		
 private default int nameRef( (Params)`` ) = 0;
 private default int nameRef( (Params)`<Param p>,<{Param ","}* ps>` ) = nameRef( params( ps ) );
 private int nameRef( (Params)`<AssignmentPattern _>,<{Param ","}* ps>` ) = 1 + nameRef( params( ps ) );
 
-Statement desugar( (Statement)`var <AssignmentPattern pattern> = <Expression val>;` )
+Statement desugar( (Statement)`var <VariableDeclaration d>;` )
+	= desugarDecl( d )
+	when
+		/AssignmentPattern _ := d;
+Statement desugar( s:(Statement)`var <VariableDeclaration d>,<{VariableDeclaration ","}+ ds>;` )
 	= (Statement)`{ <Statement* result> }`
 	when
-		list[Expression] destructure := destructure( val, [Id]"_ref", 1, pattern ), 
+		/AssignmentPattern := s,
+		(Statement)`{ <Statement* desD> }` := desugarDecl( d ),
+		(Statement)`{ <Statement* desRest> }` := desugar( (Statement)`var <{VariableDeclaration ","}+ ds>;` ),
+		Statement* result := concat( desD, desRest );
+
+Statement desugar( (Statement)`var <VariableDeclaration d>;` )
+	= desugarDecl( d );
+	
+default Statement desugarDecl( VariableDeclaration d ) = (Statement)`var <VariableDeclaration d>;`;
+Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>` )
+	= (Statement)`{ <Statement* result> }`
+	when
+		list[Expression] destructure := destructureNoRef( val, refName( pattern, val, [Id]"_ref" ), 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
 
 Source desugar( Source src ) 
