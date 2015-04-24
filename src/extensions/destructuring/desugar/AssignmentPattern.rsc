@@ -15,10 +15,14 @@ private Expression assignment( Id name, Expression original, (AssignmentPattern)
 	= (Expression)`<Id name> = <Expression original>`;
 private Expression assignment( Id name, arr:(Expression)`[ <{ArgExpression ","}* args> ]`, _ )
 	= (Expression)`<Id name> = <Expression arr>`;
+private Expression assignment( Id name, arr:(Expression)`[ <{ArgExpression ","}* args>, ]`, _ )
+	= (Expression)`<Id name> = <Expression arr>`;
 private default Expression assignment( Id name, Expression original, AssignmentPattern pattern )
 	= (Expression)`<Id name> = _slicedToArray( <Expression original>, <Expression size> )`
 	when Expression size := size( pattern );
 private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
+	= (Expression)`<Id name> = _toArray( <Expression original> )`;
+private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest>, ]` )
 	= (Expression)`<Id name> = _toArray( <Expression original> )`;
 	
 // destructurePattern
@@ -31,10 +35,12 @@ private list[Expression] destructurePattern( Id original, Id name, int nesting, 
 		Expression size := [Expression]"<sizeArrayDestructure(strippedPattern)>",
 		Expression remainder := (Expression)`<Id rest> = <Id name>.slice(<Expression size>)`,
 		list[Expression] destructure := destructuring( <original, name, nesting, 0>, strippedPattern );
+private list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:(AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest>, ]` )
+	= destructurePattern( original, name, nesting, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` );
 
 // destructuring
 private list[Expression] destructuring( State s, AssignmentPattern pattern )
-	= f( s, unfold( pattern ) );
+	= f( s, pop( pattern ) );
 
 private default list[Expression] f( _, false ) = [];
 private list[Expression] f( State s, <p,ps> )
@@ -44,9 +50,11 @@ private list[Expression] f( State s, <p,ps> )
 		list[Expression] elem := assignmentDestructure( s, p ),
 		list[Expression] rest := destructuring( s[index=s.index+1], restPattern );
 
-default bool unfold( _ ) = false;
-tuple[AssignmentElement,{AssignmentElement ","}*] unfold( (AssignmentPattern)`[ <AssignmentElement p>,<{AssignmentElement ","}* ps> ]` ) = <p,ps>;
-tuple[AssignmentProperty,{AssignmentProperty ","}*] unfold( (AssignmentPattern)`{ <AssignmentProperty p>,<{AssignmentProperty ","}* ps> }` ) = <p,ps>;
+default bool pop( _ ) = false;
+tuple[AssignmentElement,{AssignmentElement ","}*] pop( (AssignmentPattern)`[ <AssignmentElement p>,<{AssignmentElement ","}* ps> ]` ) = <p,ps>;
+tuple[AssignmentElement,{AssignmentElement ","}*] pop( (AssignmentPattern)`[ <AssignmentElement p>,<{AssignmentElement ","}* ps>, ]` ) = <p,ps>;
+tuple[AssignmentProperty,{AssignmentProperty ","}*] pop( (AssignmentPattern)`{ <AssignmentProperty p>,<{AssignmentProperty ","}* ps> }` ) = <p,ps>;
+tuple[AssignmentProperty,{AssignmentProperty ","}*] pop( (AssignmentPattern)`{ <AssignmentProperty p>,<{AssignmentProperty ","}* ps>, }` ) = <p,ps>;
 
 AssignmentPattern createPattern( {AssignmentElement ","}* ps ) = (AssignmentPattern)`[ <{AssignmentElement ","}* ps> ]`;
 AssignmentPattern createPattern( {AssignmentProperty ","}* ps ) = (AssignmentPattern)`{ <{AssignmentProperty ","}* ps> }`;
