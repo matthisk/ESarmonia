@@ -18,10 +18,13 @@ Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pa
 		Id ref := [Id]"_arg<nameRef( params( rest ) )>",
 		Statement* desBody := desugarBody( pattern, ref, body );
 
+private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, Id ref ) = ref;
+private default Id refName( AssignmentPattern _, Id ref ) = [Id]"<ref>2";
+
 private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
 	= concat( result, body )
 	when
-		list[Expression] destructure := destructureAssignmentPattern( (Expression)`<Id ref>`,[Id]"<ref>2", pattern ),
+		list[Expression] destructure := destructureFunctionParam( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
 		
 private default int nameRef( (Params)`` ) = 0;
@@ -31,7 +34,7 @@ private int nameRef( (Params)`<AssignmentPattern _>,<{Param ","}* ps>` ) = 1 + n
 Statement desugar( (Statement)`var <AssignmentPattern pattern> = <Expression val>;` )
 	= (Statement)`{ <Statement* result> }`
 	when
-		list[Expression] destructure := destructureAssignmentPattern( val, [Id]"_ref", pattern ), 
+		list[Expression] destructure := destructure( val, [Id]"_ref", 1, pattern ), 
 		Statement* result := convertToStatementStar( destructure );
 
 Source desugar( Source src ) 
@@ -67,7 +70,7 @@ private Source desugarExpressionAssignmentPatterns( Source src ) {
 		when
 			str pattern := "<(Expression)`[<{ArgExpression ","}* args>]`>",
 			AssignmentPattern pattern := [AssignmentPattern]"<pattern>",
-			list[Expression] destructure := destructureAssignmentPattern( val, ref, pattern ),
+			list[Expression] destructure := destructure( val, ref, 1, pattern ),
 			(Expression) e := convertToCSArray( destructure ),
 			Expression result := (Expression)`<Expression e>.shift()`
 		// Case with rest value
@@ -76,7 +79,7 @@ private Source desugarExpressionAssignmentPatterns( Source src ) {
 			setDeclaration( result, ref )
 		when
 			AssignmentPattern pattern := (AssignmentPattern)`<ArrayDestructure arrPattern>`,
-			list[Expression] destructure := destructureAssignmentPattern( val, ref, pattern ),
+			list[Expression] destructure := destructure( val, ref, 1, pattern ),
 			(Expression) e := convertToCSArray( destructure ),
 			Expression result := (Expression)`<Expression e>.shift()`
 		// Case with object destructure
@@ -85,9 +88,10 @@ private Source desugarExpressionAssignmentPatterns( Source src ) {
 			setDeclaration( result, ref )
 		when
 			AssignmentPattern pattern := (AssignmentPattern)`<ObjectDestructure pattern>`,
-			list[Expression] destructure := destructureAssignmentPattern( val, ref, pattern ),
+			list[Expression] destructure := destructure( val, ref, 1, pattern ),
 			Expression e := convertToCSArray( destructure ),
 			Expression result := (Expression)`<Expression e>.shift()`
+		
 	}
 }
 
@@ -113,6 +117,3 @@ private Statement* convertToStatementStar( list[Expression] es ) {
 	
 	return result;
 }
-
-private list[Expression] destructureAssignmentPattern( Expression original, Id ref, AssignmentPattern pattern )
-	= destructure( original, ref, 1, pattern );

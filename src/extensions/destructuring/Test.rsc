@@ -1,5 +1,6 @@
 module extensions::destructuring::Test
 extend desugar::Visitor;
+extend runtime::Visitor;
 extend \test::Base;
 
 import extensions::destructuring::Syntax;
@@ -139,12 +140,24 @@ test bool desugarObjectDestructure() {
 			  bool(pt) { return /(Statement)`([_ref={a:1,b:2}, a = _ref.a, b = _ref.b ].shift());` := pt; }>]
 		)),
 		
+		\it( "object destructuring expression", tryDesugar(
+			"var obj = {a:1,b:2};({a,b} = obj);",
+			[<"([_ref = obj, a = _ref.a, b = _ref.b ].shift());",
+			  bool(pt) { return /(Statement)`([_ref = obj, a = _ref.a, b = _ref.b ].shift());` := pt; }>]
+		)),
+		
 		\it( "as a function parameter", tryDesugar(
 			"function( {a,b} ) {
 			'	return a + b;
 			'}",
 			[<"function( _arg0 ) { var a = _arg0.a; var b = _arg0.b; return a + b; }",
 			  bool(pt) { return /(Function)`function( _arg0 ) { var a = _arg0.a; var b = _arg0.b; return a + b; }` := pt; }>]
+		)),
+		
+		\it( "trailing commas", tryDesugar(
+			"var {a,} = {a:1};",
+			[<"{ var _ref = {a:1}; var a = _ref.a; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {a:1}; var a = _ref.a; }` := pt; }>]
 		))
 	]);
 }

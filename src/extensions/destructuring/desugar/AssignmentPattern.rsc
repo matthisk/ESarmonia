@@ -3,11 +3,17 @@ extend desugar::Desugar;
 
 import IO;
 import extensions::destructuring::Syntax;
+import extensions::destructuring::Runtime;
 import extensions::destructuring::desugar::Util;
 
 alias State = tuple[ Id original, Id name, int nesting, int index ];
 
-list[Expression] destructure( Expression original, Id name, int nesting, AssignmentPattern pattern )
+default list[Expression] destructureFunctionParam( Expression original, Id name, int nesting, AssignmentPattern pattern )
+	= destructure( original, name, nesting, pattern );
+list[Expression] destructureFunctionParam( (Expression)`<Id _>`, Id name, int nesting, pattern:(AssignmentPattern)`<ObjectDestructure _>` )
+	= destructurePattern( name, name, nesting, pattern ); 
+
+default list[Expression] destructure( Expression original, Id name, int nesting, AssignmentPattern pattern )
 	= assignment( name, original, pattern ) + destructurePattern( name, name, nesting, pattern );
 
 // assignment
@@ -18,12 +24,18 @@ private Expression assignment( Id name, arr:(Expression)`[ <{ArgExpression ","}*
 private Expression assignment( Id name, arr:(Expression)`[ <{ArgExpression ","}* args>, ]`, _ )
 	= (Expression)`<Id name> = <Expression arr>`;
 private default Expression assignment( Id name, Expression original, AssignmentPattern pattern )
-	= (Expression)`<Id name> = _slicedToArray( <Expression original>, <Expression size> )`
-	when Expression size := size( pattern );
+	= setRuntime( e, _slicedToArray )
+	when 
+		Expression size := size( pattern ),
+		Expression e := (Expression)`<Id name> = _slicedToArray( <Expression original>, <Expression size> )`;
 private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
-	= (Expression)`<Id name> = _toArray( <Expression original> )`;
+	= setRuntime( e, _toArray )
+	when
+		Expression e := (Expression)`<Id name> = _toArray( <Expression original> )`;
 private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest>, ]` )
-	= (Expression)`<Id name> = _toArray( <Expression original> )`;
+	= setRuntime( e, _toArray )
+	when
+		Expression e := (Expression)`<Id name> = _toArray( <Expression original> )`;
 	
 // destructurePattern
 private default list[Expression] destructurePattern( Id original, Id name, int nesting, AssignmentPattern pattern )
