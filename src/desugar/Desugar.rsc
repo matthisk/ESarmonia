@@ -5,6 +5,10 @@ import ParseTree;
 import Set;
 
 anno set[Id] Expression@declarations;
+anno Statement Expression@runtime;
+
+private Expression setRuntime( Expression e, Statement rt )
+	= e[@runtime = rt];
 
 private Expression setDeclaration( Expression e, Id decl )
 	= e[@declarations = {decl}]

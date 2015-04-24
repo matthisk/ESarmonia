@@ -30,7 +30,7 @@ Spec failParsing( str input ) {
 	};
 }
 
-Spec tryDesugar( str input, list[tuple[str, bool(start[Source])]] fs ) = trySomething( input, fs, start[Source]( pt ) { return desugar( pt ); } );
+Spec tryDesugar( str input, list[tuple[str, bool(start[Source])]] fs ) = trySomething( input, fs, start[Source]( pt ) { return runtimeVisitor( desugar( pt ) ); } );
 Spec tryRuntime( str input, list[tuple[str, bool(start[Source])]] fs ) = trySomething( input, fs, start[Source]( pt ) { return runtimeVisitor( desugar( pt ) ); } );
 
 private Spec trySomething( str input, list[tuple[str,bool(start[Source])]] fs, start[Source](start[Source]) m ) {

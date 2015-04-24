@@ -3,6 +3,7 @@ extend desugar::Desugar;
 
 import IO;
 import extensions::object::Syntax;
+import extensions::object::Runtime;
 
 @doc{ Here trailing commas in object literal notation are removed,
 it is either this solution, or creating separate functions for
@@ -19,6 +20,7 @@ Expression desugar( (Expression)`{ <{PropertyAssignment ","}* bef>, <Id name>(<P
 		PropertyAssignment prop := (PropertyAssignment)`<Id name> : function(<Params ps>) { <Statement* body> }`;
 	
 Expression desugar( (Expression)`{ <{PropertyAssignment ","}* bef>, [ <Expression key> ] : <Expression val>, <{PropertyAssignment ","}* rest> }` )
-	= (Expression)`_defineProperty(<Expression obj>, <Expression key>, <Expression val>)`
+	= setRuntime( e, _defineProperty )
 	when
-		Expression obj := (Expression)`{ <{PropertyAssignment ","}* bef>, <{PropertyAssignment ","}* rest> }`;
+		Expression obj := (Expression)`{ <{PropertyAssignment ","}* bef>, <{PropertyAssignment ","}* rest> }`,
+		Expression e :=  (Expression)`_defineProperty(<Expression obj>, <Expression key>, <Expression val>)`;

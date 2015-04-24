@@ -1,5 +1,5 @@
-module \test::Compatibility
-extend \test::CompatibilityBase;
+module \test::compatibility::Compatibility
+extend \test::compatibility::Base;
 
 test bool propertailcalls() {
 	return
