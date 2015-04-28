@@ -26,7 +26,7 @@ private Expression setDeclarations( Expression e, set[Id] decl )
 	= e[@declarations = e@declarations + decl]
 	when e@declarations?;
 
-start[Source] declareVariables( start[Source] src ) {
+&T <: Tree declareVariables( &T <: Tree src ) {
 	set[Id] variables = {};
 	
 	return visit( src ) {

@@ -163,12 +163,18 @@ syntax Expression
     | assignBinOr: Expression "|=" Expression
   )
   ;
-  
-  
+    
 syntax VarDecl
   = "var" {VariableDeclaration ","}+ declarations ";"
   ;
-  
+
+syntax LHSExpression
+	= Expression!objectDefinition!array
+	;
+
+syntax Initializer
+	= "=" Expression
+	;  
 
 syntax PropertyName
  = Id

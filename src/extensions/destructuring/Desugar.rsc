@@ -137,8 +137,13 @@ private Expression convertToCSArray( list[Expression] es ) {
 private Statement* convertToStatementStar( list[Expression] es ) {
 	Statement* result = stmEmpty();
 	
-	for( (Expression)`<Id var> = <Expression val>` <- es ) {
-		Statement variable = (Statement)`var <Id var> = <Expression val>;`;
+	for( Expression e <- es ) {
+		Statement variable;
+		if( (Expression)`<Id var> = <Expression val>` := e ) {
+			variable = (Statement)`var <Id var> = <Expression val>;`;
+		} else {
+			variable = (Statement)`<Expression e>;`;
+		}
 		result = \append( result, variable );
 	}
 	

@@ -284,7 +284,14 @@ test bool desugarArrayDestructure() {
 			"var [a,...rest,] = [1,2,3,4,5];",
 			[<"{ var _ref = [1,2,3,4,5]; var a = _ref[0]; var rest = _ref.slice(1); }",
 			  bool(pt) { return /(Statement)`{ var _ref = [1,2,3,4,5]; var a = _ref[0]; var rest = _ref.slice(1); }` := pt; }>]
+		)),
+		
+		\it( "nested rest value", tryDesugar(
+			"var [a,...[c,d]] = arr;",
+			[<"{ var _ref = _toArray( arr ); var a = _ref[0]; var _ref$slice = _slicedToArray( _ref.slice(1), 2 ); var c = _ref$slice[0]; var d = _ref$slice[1]; }",
+			  bool(pt) { /(Statement)`{ var _ref = _toArray( arr ); var a = _ref[0]; var _ref$slice = _slicedToArray( _ref.slice(1), 2 ); var c = _ref$slice[0]; var d = _ref$slice[1]; }` := pt; }>]
 		))
 	]);
 }
+
 

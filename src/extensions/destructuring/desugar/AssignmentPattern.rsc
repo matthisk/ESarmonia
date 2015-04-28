@@ -28,11 +28,11 @@ private default Expression assignment( Id name, Expression original, AssignmentP
 	when 
 		Expression size := size( pattern ),
 		Expression e := (Expression)`<Id name> = _slicedToArray( <Expression original>, <Expression size> )`;
-private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
+private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression _> ]` )
 	= setRuntime( e, _toArray )
 	when
 		Expression e := (Expression)`<Id name> = _toArray( <Expression original> )`;
-private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest>, ]` )
+private Expression assignment( Id name, Expression original, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression _>, ]` )
 	= setRuntime( e, _toArray )
 	when
 		Expression e := (Expression)`<Id name> = _toArray( <Expression original> )`;
@@ -40,15 +40,20 @@ private Expression assignment( Id name, Expression original, (AssignmentPattern)
 // destructurePattern
 private default list[Expression] destructurePattern( Id original, Id name, int nesting, AssignmentPattern pattern )
 	= destructuring( <original, name, nesting, 0>, pattern );
-private list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:(AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` )
+private list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:(AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression rest> ]` )
 	= destructure + remainder
 	when
 		AssignmentPattern strippedPattern := (AssignmentPattern)`[ <{AssignmentElement ","}* ps> ]`, 
 		Expression size := [Expression]"<sizeArrayDestructure(strippedPattern)>",
-		Expression remainder := (Expression)`<Id rest> = <Id name>.slice(<Expression size>)`,
+		list[Expression] remainder := toRemainder( original, name, nesting, size, rest ),
 		list[Expression] destructure := destructuring( <original, name, nesting, 0>, strippedPattern );
-private list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:(AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest>, ]` )
-	= destructurePattern( original, name, nesting, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<Id rest> ]` );
+private list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:(AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression rest>, ]` )
+	= destructurePattern( original, name, nesting, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression rest> ]` );
+
+private list[Expression] toRemainder( Id original, Id name, int nesting, Expression size, (LHSExpression)`<AssignmentPattern rest>` )
+	= destructure( (Expression)`<Id name>.slice(<Expression size>)`, [Id]"<name>$slice", nesting + 1, rest );
+private list[Expression] toRemainder( Id _, Id name, int _, Expression size, (LHSExpression)`<Expression rest>` )
+	= [ (Expression)`<Expression rest> = <Id name>.slice(<Expression size>)` ];
 
 // destructuring
 private list[Expression] destructuring( State s, AssignmentPattern pattern )
@@ -63,8 +68,8 @@ private list[Expression] destructuringHelper( State s, <p,ps> )
 		list[Expression] rest := destructuring( s[index=s.index+1], restPattern );
 
 // AssignmentDestructure
-private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Id pName>` )
-	= [ (Expression)`<Id pName> = <Id name>[<Expression index>]` ]
+private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Expression pName>` )
+	= [ (Expression)`<Expression pName> = <Id name>[<Expression index>]` ]
 	when
 		Expression index := [Expression]"<s.index>",
 		Id name := s.name;
@@ -74,8 +79,8 @@ private list[Expression] assignmentDestructure( State s, (AssignmentProperty)`<I
 	when
 		Id name := s.name;
 		
-private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Id pName> = <Expression defaultValue>` )
-	= [ (Expression)`<Id pName> = <Expression refAtIndex> === undefined ? <Expression defaultValue> : <Expression refAtIndex>` ]
+private list[Expression] assignmentDestructure( State s, (AssignmentElement)`<Expression pName> = <Expression defaultValue>` )
+	= [ (Expression)`<Expression pName> = <Expression refAtIndex> === undefined ? <Expression defaultValue> : <Expression refAtIndex>` ]
 	when
 		Expression index := [Expression]"<s.index>",
 		Id name := s.name,

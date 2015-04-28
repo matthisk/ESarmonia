@@ -6,6 +6,10 @@ syntax Param
 	= AssignmentPattern
 	; 
 
+syntax LHSExpression
+	= AssignmentPattern
+	;
+
 syntax Expression
 	= right( 
 	  	  assign: ArrayDestructure!base "=" !>> ([=][=]?) Expression
@@ -28,7 +32,7 @@ syntax AssignmentPattern
 	
 syntax ArrayDestructure
 	= base: "[" {AssignmentElement ","}* ","? "]"
-	| rest: "[" {AssignmentElement ","}* "," "..."Id ","? "]"
+	| rest: "[" {AssignmentElement ","}* "," "..."LHSExpression ","? "]"
 	;
 
 syntax ObjectDestructure
@@ -36,13 +40,11 @@ syntax ObjectDestructure
 	;
 
 syntax AssignmentProperty
-	= Id
+	= Id Initializer?
 	| PropertyName ":" AssignmentElement
-	| Id "=" Expression
 	;
 
 syntax AssignmentElement
-	= LeftHandSideExpression Initializer? 
-	| Id "=" Expression
+	= LHSExpression Initializer? 
 	| AssignmentPattern
 	;
