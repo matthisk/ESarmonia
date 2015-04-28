@@ -25,11 +25,19 @@ private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, (Expression)`<Id
 private Id refName( AssignmentPattern _, _, Id ref ) = ref;
 
 private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
-	= concat( result, body )
+	= concat( result, checkForDefaultFunctionValue( pattern, body ) )
 	when
 		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
-		
+
+private default Statement* checkForDefaultFunctionValue( AssignmentPattern _, Statement* body )
+	= body;
+private Statement* checkForDefaultFunctionValue( AssignmentPattern pattern, Statement* body )
+	= scope( body )
+	when 
+		   /(Function)`function(<{Param ","}* _>) { <Statement* _> }` := pattern 
+		|| /(Function)`function <Id _>(<{Param ","}* _>) { <Statement* _> }` := pattern;
+
 private default int nameRef( (Params)`` ) = 0;
 private default int nameRef( (Params)`<Param p>,<{Param ","}* ps>` ) = nameRef( params( ps ) );
 private int nameRef( (Params)`<AssignmentPattern _>,<{Param ","}* ps>` ) = 1 + nameRef( params( ps ) );

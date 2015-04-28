@@ -67,6 +67,11 @@ default Expression desugar( Expression e ) = e;
 default Function desugar( Function f ) = f;
 default Source desugar( Source src ) = src;
 
+private Statement* scope( Statement* body ) 
+	= statementStar( f )
+	when
+		Statement f := (Statement)`return (function() { <Statement* body> })();`;
+
 private Statement* statementStar( Statement s ) 
 	= result
 	when

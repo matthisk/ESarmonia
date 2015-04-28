@@ -39,10 +39,10 @@ syntax AssignmentProperty
 	= Id
 	| PropertyName ":" AssignmentElement
 	| Id "=" Expression
-	;	
+	;
 
 syntax AssignmentElement
-	= Id
+	= LeftHandSideExpression Initializer? 
 	| Id "=" Expression
 	| AssignmentPattern
 	;
