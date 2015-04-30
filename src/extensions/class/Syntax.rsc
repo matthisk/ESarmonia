@@ -2,7 +2,15 @@ module extensions::class::Syntax
 extend core::Syntax;
 
 syntax Statement
-	= "class" Id name ("extends" Id extend)? "{" Constructor? ctor Methods ms "}"
+	= "class" Id name ClassTail
+	;
+
+syntax Expression
+	= class: "class" Id? name ClassTail
+	;
+
+syntax ClassTail
+	= ("extends" Id extend)? "{" Constructor? ctor Methods ms "}"
 	;
 
 syntax Methods
@@ -14,13 +22,12 @@ syntax Constructor
 	;
 
 syntax Method
-	= Modifier? modifier Id name \ "constructor" "(" Params ")" "{" Statement* body "}"
+	= MethodDefinition
+	| "static" MethodDefinition 
 	;
-	
-syntax Modifier
-	= "static"
-	| "get"
-	| "set"
+
+syntax MethodDefinition
+	= PropertyName name \ "constructor" "(" Params ")" "{" Statement* body "}"
 	;
 	
 syntax Expression

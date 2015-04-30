@@ -1,5 +1,6 @@
 module extensions::class::Test
 extend desugar::Visitor;
+extend runtime::Visitor;
 extend \test::Base;
 
 import extensions::class::Syntax;
@@ -8,6 +9,10 @@ import extensions::class::Desugar;
 test bool parsingClassDeclarations() {	
 	return
 	describe( "Class declaration", [
+
+		\it( "can be parsed as expression", tryParsing(
+			"f( class Exp { } );"
+		)),
 	
 		\it( "can have a name and empty body", tryParsing("
                 class Name { };
@@ -32,6 +37,13 @@ test bool parsingClassDeclarations() {
                 	subtract( x, y ) { return x - y; }
                 };
 		") ),
+		
+		\it( "can have string or numeric method identifiers", tryParsing(
+			"class M { 
+				\"str\"() { return 10; }
+				0() { return 0; }
+			}"
+		)),
 		
 		\it( "can have static methods", tryParsing("
                 class Math { 
@@ -126,7 +138,31 @@ test bool desugaringClassDeclarations() {
 			< "Name.prototype.update = function() { _get(Object.getPrototypeOf(Name.prototype), \"update\", this).call(this); };", 
 			  bool( pt ) { return /(Statement)`Name.prototype.update = function() { _get(Object.getPrototypeOf(Name.prototype), "update", this).call(this); };` := pt; } >
 			
-		]) )
+		]) ),
 		
+		\it("is desugared as an expression", tryDesugar(
+			"f( class Name { constructor() { this.init = true; } } );",
+			[<"(function() { function Name() { _classCallCheck(this,Name); this.init = true; } return Name; })()",
+			  bool(pt) { return /(Expression)`(function() { function Name() { _classCallCheck(this,Name); this.init = true; } return Name; })()` := pt; }
+			  >]
+		)),
+		
+		\it("is desugared with numeric or string method identifiers", tryDesugar(
+			"class M {
+				\"str\"() { return 10; }
+				0() { return 0; }
+			}",
+			[<"var M = (function() { function M() { _classCallCheck(this,M); } M.prototype[\"str\"] = function() { return 10; }; M.prototype[0] = function() { return 0; }; return M; })();",
+			  bool(pt) { return /(Statement)`var M = (function() { function M() { _classCallCheck(this,M); } M.prototype["str"] = function() { return 10; }; M.prototype[0] = function() { return 0; }; return M; })();` := pt; }>]
+		)),
+		
+		\it("is desugared with getter and setter methods", tryDesugar(
+			"class M {
+				get aap() { return this.aap; }
+				set aap(a) { this.aap = a; }
+			}",
+			[<"var M = (function() { function M() { _classCallCheck(this,M); } _createClass( M, [{ key: \"aap\", get: function() { return this.aap; } }]); _createClass( M, [{ key: \"aap\", set: function( a ) { this.aap = a; } }]); return M; })();",
+			  bool(pt) { return /(Statement)`var M = (function() { function M() { _classCallCheck(this,M); } _createClass( M, [{ key: "aap", get: function() { return this.aap; } }]); _createClass( M, [{ key: "aap", set: function( a ) { this.aap = a; } }]); return M; })();` := pt; }>]
+		))
 	]);
 }
