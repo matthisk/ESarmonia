@@ -1,5 +1,6 @@
 module extensions::destructuring::Runtime
-extend runtime::Base;
+
+import extensions::destructuring::Syntax;
 
 public Statement _slicedToArray
 	= (Statement)`var _slicedToArray = function (arr, i) { 

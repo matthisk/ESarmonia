@@ -1,5 +1,4 @@
 module extensions::spread::Runtime
-extend runtime::Base;
 
 import extensions::spread::Syntax;
 
