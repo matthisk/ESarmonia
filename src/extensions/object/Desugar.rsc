@@ -1,6 +1,8 @@
 module extensions::object::Desugar
 extend desugar::Desugar;
 
+extend extensions::object::desugar::Shared;
+
 import IO;
 import extensions::object::Syntax;
 import extensions::object::Runtime;
