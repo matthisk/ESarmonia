@@ -162,7 +162,7 @@ test bool class() {
 		        'try {
 		        '  var B = class C {
 		        '    [C](){}
-		        '  }
+		        '  };
 		        '} catch(e) {
 		        '  return true;
 		        '}

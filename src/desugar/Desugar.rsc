@@ -22,6 +22,9 @@ private Statement* scope( Statement* body )
 	when
 		Statement f := (Statement)`return (function() { <Statement* body> })();`;
 
+bool empty( Statement* stms )
+	= (Statement)`{}` := (Statement)`{ <Statement* stms> }`;
+
 private default Statement* unscope( Statement s ) = statementStar( s );
 private Statement* unscope( (Statement)`{ <Statement* res> }` )
 	= res;

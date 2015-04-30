@@ -3,9 +3,10 @@ extend core::Syntax;
 
 syntax PropertyAssignment
 	= shorthand: Id
+	| ObjectMethod
 	;
 
-syntax MethodDefinition
+syntax ObjectMethod
 	= PropertyName name "(" Params ")" "{" Statement* body "}"
 	; 
 	
