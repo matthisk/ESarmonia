@@ -22,14 +22,15 @@ syntax Constructor
 	;
 
 syntax Method
-	= MethodDefinition
-	| "static" MethodDefinition 
+	= ClassElement
+	| "static" ClassElement 
 	;
 
-syntax MethodDefinition
-	= PropertyName name \ "constructor" "(" Params ")" "{" Statement* body "}"
+syntax ClassElement
+	= MethodDefinition
+	| PropertyName name \ "constructor" "(" Params ")" "{" Statement* body "}"
 	;
-	
+
 syntax Expression
 	= "super" "(" {ArgExpression ","}* ")"
 	| "super" "." Id

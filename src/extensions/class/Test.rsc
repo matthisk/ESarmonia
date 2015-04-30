@@ -89,6 +89,13 @@ test bool desugaringClassDeclarations() {
 			
 		]) ),
 		
+		\it("is desugared with an empty constructor", tryDesugar("class Name { \"constructor\"() {} }", [
+			
+			< "", 
+			  bool( pt ) { return false; } >
+			
+		]) ),
+		
 		\it("is desugared with methods", tryDesugar( 
 			"class Name { 
 			'	constructor() { } 
