@@ -1,12 +1,16 @@
 module extensions::destructuring::Syntax
-//extend core::Syntax;
-extend extensions::object::Syntax;
+extend core::Syntax;
+//extend extensions::object::Syntax;
 
 syntax Param
 	= AssignmentPattern
 	; 
 
 syntax LHSExpression
+	= AssignmentPattern
+	;
+
+syntax ForBinding
 	= AssignmentPattern
 	;
 
@@ -45,6 +49,5 @@ syntax AssignmentProperty
 	;
 
 syntax AssignmentElement
-	= LHSExpression Initializer? 
-	| AssignmentPattern
+	= LHSExpression Initializer?
 	;

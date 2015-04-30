@@ -19,7 +19,6 @@ AssignmentPattern createPattern( {AssignmentProperty ","}* ps ) = (AssignmentPat
 
 Expression extractKey( (PropertyName)`<String s>` ) = (Expression)`<String s>`;
 Expression extractKey( (PropertyName)`<Numeric s>` ) = (Expression)`<Numeric s>`;
-Expression extractKey( (PropertyName)`[<Expression computed>]` ) = computed;
 
 Id extractName( (AssignmentElement)`<Id name>` ) = name;
 Id extractName( (AssignmentElement)`<Id name> = <Expression _>` ) = name;

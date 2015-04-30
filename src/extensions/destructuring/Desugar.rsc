@@ -1,10 +1,20 @@
 module extensions::destructuring::Desugar
 extend desugar::Desugar;
 
-import IO;
-import extensions::destructuring::Syntax;
+extend extensions::destructuring::desugar::Shared;
 
 import extensions::destructuring::desugar::AssignmentPattern;
+import extensions::destructuring::Syntax;
+
+import IO;
+
+@doc{
+ for in loops can also have destructuring patterns these need to be put in a variable declaration
+ to be desugared by the destructuring extensions
+}
+Statement desugar( (Statement)`for( <Declarator d> <AssignmentPattern pt> in <Expression x> ) <Statement body>` )
+	= (Statement)`for( var _i in <Expression x> ) { <Declarator d> <AssignmentPattern pt> = _i; <Statement body> }`
+	when Statement body := unscope( body );
 
 Function desugar( (Function)`function <Id funName>( <{Param ","}* bef>, <AssignmentPattern pattern>, <{Param ","}* rest> ) { <Statement* body> }` )
 	= (Function)`function <Id funName>( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { <Statement* desBody> }`

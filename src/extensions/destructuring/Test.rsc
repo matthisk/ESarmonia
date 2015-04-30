@@ -57,6 +57,10 @@ test bool parsingArrayDestructure() {
 		\it( "with nested arrays", tryParsing(
 			"var [ x, [y,z] ] = xs;"
 		)),
+
+		\it( "with nested objects (in exp assignment)", tryParsing(
+			"[ x, {y,z} ] = xs"
+		)),
 		
 		\it( "with empty slots", tryParsing(
 			"var [ , y, z ] = xs;"
@@ -100,7 +104,7 @@ test bool desugarObjectArrayDestructure() {
 		)),
 		
 		\it( "objects nested in arrays as expression", tryDesugar(
-			"[a,{b,c}] = [1,{b:1,c:2}]",
+			"[a,{b,c}] = [1,{b:1,c:2}];",
 			[<"",
 			  bool(pt) { return false; }>]
 		))
@@ -178,11 +182,12 @@ test bool desugarObjectDestructure() {
 			  bool(pt) { return /(Statement)`{ var _ref = {"a":100}; var a = _ref["a"]; }` := pt; }>]
 		)),
 		
-		\it( "with a computed property name", tryDesugar(
-			"var qux = \"aap\"; var { [qux] : a } = { \"aap\" : 100 };",
-			[<"var a = _ref[qux];",
-			  bool(pt) { return /(Statement)`var a = _ref[qux];` := pt; }>]
-		)),
+		// Computed properties can only be used in combination with object literal extension
+		//\it( "with a computed property name", tryDesugar(
+		//	"var qux = \"aap\"; var { [qux] : a } = { \"aap\" : 100 };",
+		//	[<"var a = _ref[qux];",
+		//	  bool(pt) { return /(Statement)`var a = _ref[qux];` := pt; }>]
+		//)),
 		
 		\it( "with a default value", tryDesugar(
 			"var {1:a=10} = obj;",
@@ -192,8 +197,8 @@ test bool desugarObjectDestructure() {
 		
 		\it( "with comma separated var declarations", tryDesugar(
 			"var {a} = {a:1}, {b} = {b:2};",
-			[<"",
-			  bool(pt) { return false; }>]
+			[<"{ var _ref = {a:1}; var a = _ref.a; var _ref = {b:2}; var b = _ref.b; }",
+			  bool(pt) { return /(Statement)`{ var _ref = {a:1}; var a = _ref.a; var _ref = {b:2}; var b = _ref.b; }` := pt; }>]
 		))
 	]);
 }
@@ -289,7 +294,7 @@ test bool desugarArrayDestructure() {
 		\it( "nested rest value", tryDesugar(
 			"var [a,...[c,d]] = arr;",
 			[<"{ var _ref = _toArray( arr ); var a = _ref[0]; var _ref$slice = _slicedToArray( _ref.slice(1), 2 ); var c = _ref$slice[0]; var d = _ref$slice[1]; }",
-			  bool(pt) { /(Statement)`{ var _ref = _toArray( arr ); var a = _ref[0]; var _ref$slice = _slicedToArray( _ref.slice(1), 2 ); var c = _ref$slice[0]; var d = _ref$slice[1]; }` := pt; }>]
+			  bool(pt) { return /(Statement)`{ var _ref = _toArray( arr ); var a = _ref[0]; var _ref$slice = _slicedToArray( _ref.slice(1), 2 ); var c = _ref$slice[0]; var d = _ref$slice[1]; }` := pt; }>]
 		))
 	]);
 }
