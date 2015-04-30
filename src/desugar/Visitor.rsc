@@ -2,6 +2,7 @@ module desugar::Visitor
 
 import ParseTree;
 import core::Syntax;
+import desugar::Declarations;
 
 start[Source] desugar( start[Source] pt ) = desugarVisitor( pt );
 

@@ -20,7 +20,7 @@ syntax Statement
   = varDecl: VarDecl
   | empty: ";"
   | block: "{" Statement* "}" 
-  | expression: Expression!function ";"
+  | expression: Expression!function!class ";"
   
   // Block level things
   | function: Function
@@ -29,9 +29,9 @@ syntax Statement
   | doWhile: "do" Statement "while" "(" Expression cond ")" ";"
   | whileDo: "while" "(" Expression cond ")" Statement
   | forDo: "for" "(" {Expression ","}* ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement
-  | forDoDeclarations: "for" "(" "var" {VariableDeclarationNoIn ","}+ ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement  
+  | forDoDeclarations: "for" "(" Declarator {VariableDeclarationNoIn ","}+ ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement  
   | forIn: "for" "(" Expression var "in" Expression obj ")" Statement
-  | forInDeclaration: "for" "(" "var" Id "in" Expression obj ")" Statement
+  | forInDeclaration: "for" "(" Declarator ForBinding "in" Expression obj ")" Statement
   | with: "with" "(" Expression scope ")" Statement
 
   // Non local control flow
@@ -165,16 +165,24 @@ syntax Expression
   ;
     
 syntax VarDecl
-  = "var" {VariableDeclaration ","}+ declarations ";"
+  = Declarator {VariableDeclaration ","}+ declarations ";"
+  ;
+
+syntax Declarator
+  = "var"
   ;
 
 syntax LHSExpression
-	= Expression!objectDefinition!array
+	= Expression!objectDefinition!array!assign
 	;
 
 syntax Initializer
 	= "=" Expression
 	;  
+
+syntax ForBinding
+	= Id
+	;
 
 syntax PropertyName
  = Id

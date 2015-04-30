@@ -13,6 +13,11 @@ start[Source] runtimeVisitor( start[Source] pt ) {
 				runtime = runtime + e@runtime;
 			}
 		}
+		case Statement s : {
+			if( s@runtime? ) {
+				runtime = runtime + s@runtime;
+			}
+		}
 	}
 	
 	return fillRuntime( pt, runtime );
