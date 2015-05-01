@@ -197,7 +197,7 @@ syntax PropertyAssignment
 
 syntax MethodDefinition
   = "get" PropertyName "(" ")" "{" Statement* "}"
-  | "set" PropertyName "(" Id ")" "{" Statement* "}"
+  | "set" PropertyName "(" Param ")" "{" Statement* "}"
   ;
 
 syntax Literal

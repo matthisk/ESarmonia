@@ -49,6 +49,7 @@ private Statement* concat( Statement* strt, Statement* rest )
 	when
 		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement* strt> <Statement* rest> }`;  
 
+private Params params( Param p ) = (Params)`<Param p>`;
 private Params params( {Param ","}* ps ) = (Params)`<{Param ","}* ps>`;
 
 private {Param ","}* psEmpty()

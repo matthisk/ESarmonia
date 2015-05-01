@@ -1,0 +1,58 @@
+module extensions::class::desugar::Method
+import desugar::Desugar;
+
+import extensions::class::Syntax;
+import extensions::class::desugar::Super;
+import extensions::class::Runtime;
+
+Statement desugarStaticMethod( Id name, Maybe[Id] parent, (ClassElement)`<PropertyName methodName>(<Params ps>) { <Statement* body> }` )
+	= createFunction( lhs, stringExp( methodName ), body ) 
+	when
+		Expression lhs := extractLHS( (Expression)`<Id name>`, methodName );
+		
+Statement desugarMethod( Id name, Maybe[Id] parent,(ClassElement)`<PropertyName methodName>(<Params ps>) { <Statement* body> }` )
+	= createFunction( lhs, stringExp( methodName ), body ) 
+	when
+		Expression lhs := extractLHS( (Expression)`<Id name>.prototype`, methodName );
+
+Statement createFunction( Expression lhs, Expression key, Statement* body )
+	= (Statement)`<Expression lhs> = function(<Param ps>) { <Statement* desugaredBody> };`
+	when
+		Statement* desugaredBody := desugarSuperAccess( key, parent, body );
+
+Statement desugarStaticMethod( Id name, Maybe[Id] parent,(MethodDefinition)`get <PropertyName methodName>() { <Statement* body> }` )
+	= createGetterSetter( args, stringExp( methodName ), [PropertyName]"get", params( psEmpty() ), body ) 
+	when
+		(Expression)`call(<{Expression ","}* args>)` := (Expression)`call(<Id name>,null)`;
+
+Statement desugarStaticMethod( Id name, Maybe[Id] parent,(MethodDefinition)`set <PropertyName methodName>(<Param param>) { <Statement* body> }` )
+	= createGetterSetter( args, stringExp( methodName ), [PropertyName]"set", params( param ), body ) 
+	when
+		(Expression)`call(<{Expression ","}* args>)` := (Expression)`call(<Id name>,null)`;
+
+Statement desugarMethod( Id name, Maybe[Id] parent,(MethodDefinition)`get <PropertyName methodName>() { <Statement* body> }` )
+	= createGetterSetter( args, stringExp( methodName ), [PropertyName]"get", params( psEmpty() ), body )
+	when
+		(Expression)`call(<{Expression ","}* args>)` := (Expression)`call(<Id name>)`;
+		
+Statement desugarMethod( Id name, Maybe[Id] parent,(MethodDefinition)`set <PropertyName methodName>(<Param param>) { <Statement* body> }` )
+	= createGetterSetter( args, stringExp( methodName ), [PropertyName]"set", params( param ), body )
+	when
+		(Expression)`call(<{Expression ","}* args>)` := (Expression)`call(<Id name>)`;
+
+Statement createGetterSetter( {Expression ","}* args, Expression key, PropertyName gs, Params ps, Statement* body )
+	= setRuntime( result, _createClass )
+	when
+		Statement* desugaredBody := desugarSuperAccess( key, parent, body ),
+		Statement result := (Statement)`_createClass( <{Expression ","}* args>, [{ key: <Expression key>, <PropertyName gs>: function(<Params ps>) { <Statement* desugaredBody> } }]);`;
+
+Expression stringExp( (PropertyName)`<String s>` ) = (Expression)`<String s>`;
+Expression stringExp( (PropertyName)`<Numeric n>` ) = [Expression]"\"<n>\"";
+Expression stringExp( (PropertyName)`<Id id>` ) = [Expression]"\"<id>\"";
+
+Expression extractLHS( Expression name, (PropertyName)`<String s>` ) 
+	= (Expression)`<Expression name>[<String s>]`;
+Expression extractLHS( Expression name, (PropertyName)`<Numeric n>` )
+	= (Expression)`<Expression name>[<Numeric n>]`;
+Expression extractLHS( Expression name, (PropertyName)`<Id id>` )
+	= (Expression)`<Expression name>.<Id id>`;
