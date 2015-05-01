@@ -91,8 +91,8 @@ test bool desugaringClassDeclarations() {
 		
 		\it("is desugared with an empty constructor", tryDesugar("class Name { \"constructor\"() {} }", [
 			
-			< "", 
-			  bool( pt ) { return false; } >
+			< "var Name = (function() { function Name() { _classCallCheck(this,Name); \<Statement* _\> } return Name; })();", 
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { _classCallCheck(this,Name); <Statement* _> } return Name; })();` := pt; } >
 			
 		]) ),
 		
@@ -105,7 +105,7 @@ test bool desugaringClassDeclarations() {
 			'}", [
 			
 			< "var Name = (function() { function Name() { \<Statement* _\> } Name.prototype.adder = function( x, y ) { return x + y; }; return Name; })();", 
-			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } Name.prototype.adder = function( x, y ) { return x + y; }; return Name; })();` := pt; } 
+			  bool( pt ) { return /(Statement)`Name.prototype.adder = function( x, y ) { return x + y; };` := pt; } 
 			>
 			
 		]) ),
@@ -118,8 +118,8 @@ test bool desugaringClassDeclarations() {
 			'	} 
 			'}", [
 			
-			< "/(Statement)`var Name = (function() { function Name() { \<Statement* _\> } Name.prototype.adder = function( x, y ) { return x + y; }; return Name; })();` := pt;", 
-			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { <Statement* _> } Name.adder = function( x, y ) { return x + y; }; return Name; })();` := pt; } >
+			< "var Name = (function() { function Name() { _classCallCheck(this,Name); } Name.adder = function( x, y ) { return x + y; }; return Name; })();", 
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { _classCallCheck(this,Name); } Name.adder = function( x, y ) { return x + y; }; return Name; })();` := pt; } >
 			
 		]) ),
 		
@@ -130,8 +130,8 @@ test bool desugaringClassDeclarations() {
 			'	}  
 			'}", [
 			
-			< "var Name = (function() { function Name(x) { \<Statement* _\> _get(Object.getPrototypeOf(Name.prototype), \"constructor\", this).call(this, x); \<Statement* _\> } return Name; })();", 
-			  bool( pt ) { return /(Statement)`var Name = (function() { function Name(x) { <Statement* _> _get(Object.getPrototypeOf(Name.prototype), "constructor", this).call(this, x); <Statement* _> } return Name; })();` := pt; } >
+			< "var Name = (function() { function Name(x) { _classCallCheck(this,Name); Function.prototype.constructor.call(this,x); } return Name; })();", 
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name(x) { _classCallCheck(this,Name); Function.prototype.constructor.call(this,x); } return Name; })();` := pt; } >
 			
 		]) ),
 		
@@ -142,8 +142,8 @@ test bool desugaringClassDeclarations() {
 			'	}  
 			'}", [
 			
-			< "Name.prototype.update = function() { _get(Object.getPrototypeOf(Name.prototype), \"update\", this).call(this); };", 
-			  bool( pt ) { return /(Statement)`Name.prototype.update = function() { _get(Object.getPrototypeOf(Name.prototype), "update", this).call(this); };` := pt; } >
+			< "var Name = (function() { function Name() { _classCallCheck(this,Name); } Name.prototype.update = function() { Function.prototype.update.call(this); }; return Name; })();", 
+			  bool( pt ) { return /(Statement)`var Name = (function() { function Name() { _classCallCheck(this,Name); } Name.prototype.update = function() { Function.prototype.update.call(this); }; return Name; })();` := pt; } >
 			
 		]) ),
 		

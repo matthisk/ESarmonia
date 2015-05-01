@@ -1,6 +1,7 @@
 module extensions::class::desugar::Super
 
 import util::Maybe;
+import ParseTree;
 import extensions::class::Syntax;
 
 Statement* desugarSuperConstructorCall( just(Id parent), Statement* stms ) {
@@ -29,7 +30,7 @@ Statement* desugarSuperReference( Expression funName, Maybe[Id] parent, Statemen
 		case
 			e:(Expression)`super(<{ArgExpression ","}* args>)`
 			=>
-			superCall( funName, parent, stms )
+			superCall( funName, args, parent, stms )
 	}
 }
 
