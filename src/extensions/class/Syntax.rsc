@@ -10,7 +10,12 @@ syntax Expression
 	;
 
 syntax ClassTail
-	= ("extends" Id extend)? "{" Constructor? ctor Methods ms "}"
+	= ClassHeritage "{" Constructor? ctor Methods ms "}"
+	;
+
+syntax ClassHeritage
+	= "extends" Expression!class extends
+	| 
 	;
 
 syntax Methods

@@ -170,6 +170,12 @@ test bool desugaringClassDeclarations() {
 			}",
 			[<"var M = (function() { function M() { _classCallCheck(this,M); } _createClass( M, [{ key: \"aap\", get: function() { return this.aap; } }]); _createClass( M, [{ key: \"aap\", set: function( a ) { this.aap = a; } }]); return M; })();",
 			  bool(pt) { return /(Statement)`var M = (function() { function M() { _classCallCheck(this,M); } _createClass( M, [{ key: "aap", get: function() { return this.aap; } }]); _createClass( M, [{ key: "aap", set: function( a ) { this.aap = a; } }]); return M; })();` := pt; }>]
+		)),
+		
+		\it("can extend other classes", tryDesugar(
+			"class A extend B {
+				
+			}"
 		))
 	]);
 }

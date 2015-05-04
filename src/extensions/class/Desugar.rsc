@@ -14,30 +14,34 @@ Expression desugar( (Expression)`class <ClassTail tail>` )
 Expression desugar( (Expression)`class <Id name> <ClassTail tail>` )
 	= desugar( just(name), tail );
 
-Expression desugar( Maybe[Id] name, (ClassTail)`{ <Methods ms> }` )
-	= desugarClassDeclaration( name, nothing(), (Constructor)`constructor() {}`, ms );
-Expression desugar( Maybe[Id] name, (ClassTail)`{ <Constructor ctor> <Methods ms> }` )
-	= desugarClassDeclaration( name, nothing(), ctor, ms );
-
-Statement desugar( (Statement)`class <Id name> { <Methods ms> }` )
-	= makeClassDeclarationStm( name, class )
+Expression desugar( Maybe[Id] name, (ClassTail)`<ClassHeritage heritage> { <Methods ms> }` )
+	= desugarClassDeclaration( name, extends, (Constructor)`constructor() {}`, ms )
 	when
-		Expression class := desugarClassDeclaration( just(name), nothing(), (Constructor)`constructor() {}`, ms );
-
-Statement desugar( (Statement)`class <Id name> extends <Id extends> { <Methods ms> }` )
-	= makeClassDeclarationStm( name, class )
+		Maybe[Expression] extends := extendsQ( heritage );
+Expression desugar( Maybe[Id] name, (ClassTail)`<ClassHeritage heritage> { <Constructor ctor> <Methods ms> }` )
+	= desugarClassDeclaration( name, extends, ctor, methods )
 	when
-		Expression class := desugarClassDeclaration( just(name), just(extends), (Constructor)`constructor() {}`, ms );
+		Maybe[Expression] extends := extendsQ( heritage );
+
+Maybe[Expression] extendsQ( (ClassHeritage)`extends <Expression extends>` ) = just(extends);
+Maybe[Expression] extendsQ( (ClassHeritage)`` ) = nothing();
 	
-Statement desugar( (Statement)`class <Id name> { <Constructor ctor> <Methods ms> }` )
-	= makeClassDeclarationStm( name, class )
-	when
-		Expression class := desugarClassDeclaration( just(name), nothing(), ctor, ms );
+Expression desugar( Maybe[Id] name, Maybe[Expression] extends, (ClassTail)`{ <Methods ms> }` )
+	= desugarClassDeclaration( name, extends, (Constructor)`constructor() {}`, ms );
+Expression desugar( Maybe[Id] name, Maybe[Expression] extends, (ClassTail)`{ <Constructor ctor> <Methods ms> }` )
+	= desugarClassDeclaration( name, extends, ctor, ms );
 
-Statement desugar( (Statement)`class <Id name> extends <Id extends> { <Constructor ctor> <Methods ms> }` )
+Statement desugar( (Statement)`class <Id name> <ClassHeritage heritage> { <Methods ms> }` )
 	= makeClassDeclarationStm( name, class )
 	when
-		Expression class := desugarClassDeclaration( just(name), just(extends), ctor, ms );
+		Maybe[Expression] extends := extendsQ( heritage ),
+		Expression class := desugarClassDeclaration( just(name), extends, (Constructor)`constructor() {}`, ms );
+
+Statement desugar( (Statement)`class <Id name> <ClassHeritage heritage> { <Constructor ctor> <Methods ms> }` )
+	= makeClassDeclarationStm( name, class )
+	when
+		Maybe[Expression] extends := extendsQ( heritage ),
+		Expression class := desugarClassDeclaration( just(name), extends, ctor, ms );
 
 /////////////////////////////////
 /////////////////////////////////
@@ -57,10 +61,10 @@ Statement ctor2Function( Id name, just( Id parent ), Params ps, Statement* body 
 		Statement* desugaredBody := desugarSuperReference( [Expression]"constructor", just(parent), body ),
 		Statement res := (Statement)`function <Id name>(<Params ps>) { _classCallCheck(this,<Id name>); if( <Id parent> != null ) { <Id parent>.apply(this,arguments); } }`;
 
-Expression desugarClassDeclaration( nothing(), Maybe[Id] extends, Constructor ctor, Methods ms )
+Expression desugarClassDeclaration( nothing(), Maybe[Expression] extends, Constructor ctor, Methods ms )
 	= desugarClassDeclaration( just( [Id]"_class" ), extends, ctor, ms ); 
 
-Expression desugarClassDeclaration( just( Id name ), Maybe[Id] extends, Constructor ctor, Methods ms )
+Expression desugarClassDeclaration( just( Id name ), Maybe[Expression] extends, Constructor ctor, Methods ms )
 	= makeClassDeclaration( name, extends, ctorFunction, methods, ret )
 	when
 		Maybe[Id] parent := nameParent( extends ),
@@ -72,22 +76,23 @@ Expression desugarClassDeclaration( just( Id name ), Maybe[Id] extends, Construc
 default Expression makeClassDeclaration( _, extends:nothing(), Statement ctor, Statement* methods, Statement ret )
 	= (Expression)`(function() { <Statement ctor> <Statement* methods> <Statement ret> })()`;
 
-default Expression makeClassDeclaration( _, just( Id extends ), Statement ctor, Statement* methods, Statement ret )
+default Expression makeClassDeclaration( _, just( Expression extends ), Statement ctor, Statement* methods, Statement ret )
 	= setRuntime( res, _inherits ) 	
 	when
 		Id parent := nameParent(extends),
 		Expression res := (Expression)`(function(<Id parent>) { <Statement ctor> <Statement* methods> _inherits(<Id name>,<Id parent>); <Statement ret> })(<Id extends>)`;
 
 Maybe[Id] nameParent( nothing() ) = nothing();
-Maybe[Id] nameParent( just( Id extends ) ) = just( nameParent( extends ) );
-Id nameParent( Id extends ) = [Id]"_<extends>";
+Maybe[Id] nameParent( just( Expression extends ) ) = just( nameParent( extends ) );
+Id nameParent( (Expression)`<Id extends>` ) = [Id]"_<extends>";
+default Id nameParent( Expression _ ) = [Id]"_ref";
 
 Expression makeClassDeclaration( _, nothing(), Statement ctor, Statement* methods, Statement ret ) 
 	= (Expression)`(function() { <Statement ctor> <Statement ret> })()`
 	when
 		empty( methods );
 
-Expression makeClassDeclaration( Id name, just( Id extends ), Statement ctor, Statement* methods, Statement ret ) 
+Expression makeClassDeclaration( Id name, just( Expression extends ), Statement ctor, Statement* methods, Statement ret ) 
 	= setRuntime( res, _inherits )	
 	when
 		Id parent := nameParent(extends),
