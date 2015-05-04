@@ -184,7 +184,8 @@ test bool class() {
 		        'class C {
 		        '  static method() { return this === undefined; }
 		        '}
-		        'return (0,C.method)();
+		        'var m = C.method;
+		        'return m();
 		        '})();"
 		)),
 		\it( "constructor requires new", tryRunning(

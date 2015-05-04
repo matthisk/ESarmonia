@@ -73,19 +73,14 @@ Expression desugarClassDeclaration( just( Id name ), Maybe[Expression] extends, 
 		Statement ctorFunction := ctor2Function( name, parent, ps, body ),
 		Statement ret := (Statement)`return <Id name>;`;
 
-default Expression makeClassDeclaration( _, extends:nothing(), Statement ctor, Statement* methods, Statement ret )
+default Expression makeClassDeclaration( Id name, extends:nothing(), Statement ctor, Statement* methods, Statement ret )
 	= (Expression)`(function() { <Statement ctor> <Statement* methods> <Statement ret> })()`;
 
-default Expression makeClassDeclaration( _, just( Expression extends ), Statement ctor, Statement* methods, Statement ret )
+default Expression makeClassDeclaration( Id name, just( Expression extends ), Statement ctor, Statement* methods, Statement ret )
 	= setRuntime( res, _inherits ) 	
 	when
 		Id parent := nameParent(extends),
-		Expression res := (Expression)`(function(<Id parent>) { <Statement ctor> <Statement* methods> _inherits(<Id name>,<Id parent>); <Statement ret> })(<Id extends>)`;
-
-Maybe[Id] nameParent( nothing() ) = nothing();
-Maybe[Id] nameParent( just( Expression extends ) ) = just( nameParent( extends ) );
-Id nameParent( (Expression)`<Id extends>` ) = [Id]"_<extends>";
-default Id nameParent( Expression _ ) = [Id]"_ref";
+		Expression res := (Expression)`(function(<Id parent>) { <Statement ctor> _inherits(<Id name>,<Id parent>); <Statement* methods> <Statement ret> })(<Id extends>)`;
 
 Expression makeClassDeclaration( _, nothing(), Statement ctor, Statement* methods, Statement ret ) 
 	= (Expression)`(function() { <Statement ctor> <Statement ret> })()`
@@ -98,6 +93,11 @@ Expression makeClassDeclaration( Id name, just( Expression extends ), Statement 
 		Id parent := nameParent(extends),
 		(Statement)`{}` := (Statement)`{ <Statement* methods> }`,
 		Expression res := (Expression)`(function(<Id parent>) { <Statement ctor> _inherits(<Id name>,<Id parent>); <Statement ret> })(<Id extends>)`;
+
+Maybe[Id] nameParent( nothing() ) = nothing();
+Maybe[Id] nameParent( just( Expression extends ) ) = just( nameParent( extends ) );
+Id nameParent( (Expression)`<Id extends>` ) = [Id]"_<extends>";
+default Id nameParent( Expression _ ) = [Id]"_ref";
 
 Statement makeClassDeclarationStm( Id name, Expression class )
 	= (Statement)`var <Id name> = <Expression class>;`;

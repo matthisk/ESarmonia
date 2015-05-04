@@ -17,6 +17,8 @@ default Expression desugar( Expression e ) = e;
 default Function desugar( Function f ) = f;
 default Source desugar( Source src ) = src;
 
+Expression toStringLiteral( str s ) = [Expression]"\"<s>\"";
+
 Statement* scope( Statement* body ) 
 	= statementStar( f )
 	when

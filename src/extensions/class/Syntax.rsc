@@ -39,4 +39,5 @@ syntax ClassElement
 syntax Expression
 	= "super" "(" {ArgExpression ","}* ")"
 	| "super" "." Id
+	| "super" "[" Expression "]"
 	;

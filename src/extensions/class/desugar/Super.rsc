@@ -28,6 +28,10 @@ Statement* desugarSuperReference( Expression funName, Maybe[Id] parent, Statemen
 			=>
 			superMember( parent, member )
 		case
+			(Expression)`super[<Expression member>]`
+			=>
+			superMember( parent, member )
+		case
 			e:(Expression)`super(<{ArgExpression ","}* args>)`
 			=>
 			superCall( funName, args, parent, stms )
@@ -38,6 +42,11 @@ Expression superMember( just(Id parent), Id member )
 	= (Expression)`<Id parent>.prototype.<Id member>`;
 Expression superMember( nothing(), Id member )
 	= (Expression)`Function.prototype.<Id member>`;
+
+Expression superMember( just(Id parent), Expression m )
+	= (Expression)`<Id parent>.prototype[<Expression m>]`;
+Expression superMember( nothing(), Expression m )
+	= (Expression)`Function.prototype[<Expression m>]`;
 
 Expression superMemberCall( just(Id parent), Id call, {ArgExpression ","}* args )
 	= (Expression)`<Id parent>.prototype.<Id call>.call(this,<{ArgExpression ","}* args>)`;
