@@ -68,12 +68,12 @@ syntax CaseClause
   ;
    
 syntax Function
-  = "function" Id name "(" Params parameters ")" "{" Statement* "}"
-  | "function" "(" Params parameters ")" "{" Statement* "}"
+  = "function" Id name "(" Params parameters ")" "{" Statement* body "}"
+  | "function" "(" Params parameters ")" "{" Statement* body "}"
   ;
 
 syntax Params
-	= {Param ","}*
+	= {Param ","}* lst
 	;
 
 syntax Param

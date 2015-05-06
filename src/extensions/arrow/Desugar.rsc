@@ -1,5 +1,5 @@
 module extensions::arrow::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 import extensions::arrow::Syntax;
 import IO;

@@ -5,7 +5,6 @@ extend \test::Base;
 
 import extensions::spread::Syntax;
 import extensions::spread::Desugar;
-import extensions::spread::Runtime;
 
 test bool parsingSpreadOperator() {
 	return
@@ -85,14 +84,5 @@ test bool desugaringSpreadOperator() {
 			  bool( pt ) { return /(Expression)`Math.max.apply(Math, _toConsumableArray("1234"))` := pt; }>]
 		))
 		
-	]);
-}
-
-test bool runtimeSpreadOperator() {
-	return describe( "Spread operator (runtime)", [
-		\it( "runtime is detected for array conversion", tryRuntime(
-			"Math.max( ...\"1234\" );",
-			[<"var _toConsumableArray = function(\<Params _\>) { \<Statement* _\> };", bool( pt ) { return /(Statement)`var _toConsumableArray = function(<Params _>) { <Statement* _> };` := pt; }>]
-		))
 	]);
 }

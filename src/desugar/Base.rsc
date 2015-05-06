@@ -1,4 +1,4 @@
-module desugar::Desugar
+module desugar::Base
 
 import desugar::Declarations;
 import core::Syntax;

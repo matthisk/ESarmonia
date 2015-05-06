@@ -1,26 +1,35 @@
 module extensions::parameters::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 import IO;
 import extensions::parameters::Syntax;
+
+Function desugar( f:(Function)`function <Id name>( ...<Id rest> ) { <Statement* body> }` )
+	= (Function)`function <Id name>() { <Statement desBody> }`
+	when
+		Statement* desBody := spreadParameter( rest, 0, body );
 
 Function desugar( f:(Function)`function( ...<Id rest> ) { <Statement* body> }` )
 	= (Function)`function() { <Statement desBody> }`
 	when
 		Statement* desBody := spreadParameter( rest, 0, body );
 
+Function desugar( f:(Function)`function <Id name>( <{Param ","}* ps>, ...<Id rest> ) { <Statement* body> }` )
+	= (Function)`function <Id name>( <{Param ","}* ps> ) { <Statement* desBody> }`
+	when
+		Statement* desBody := spreadParameter( rest, size( (Params)`<{Param ","}* ps>` ), body );
+
 Function desugar( f:(Function)`function ( <{Param ","}* ps>, ...<Id rest> ) { <Statement* body> }` )
 	= (Function)`function( <{Param ","}* ps> ) { <Statement* desBody> }`
 	when
 		Statement* desBody := spreadParameter( rest, size( (Params)`<{Param ","}* ps>` ), body );
 
-Function desugar( f:(Function)`function <Id name> ( <{Param ","}* ps> ) { <Statement* body> }` )
-	= (Function)`function <Id name> ( <{Param ","}* params> ) { <Statement* desBody> }`
+Function desugar( f:(Function)`function <Id name>( <{Param ","}* bef>, <Id pr> = <Expression defVal>, <{Param ","}* rest> ) { <Statement* body> }` )
+	= (Function)`function <Id name>(<{Param ","}* bef>, <Param p>, <{Param ","}* rest>) { <Statement* desBody> }`
 	when
-		(Function)`function( <{Param ","}* params> ) { <Statement* desBody> }` 
-			:= 
-		desugar( (Function)`function( <{Param ","}* ps> ) { <Statement* body> }` );
-		
+		Param p := (Param)`<Id pr>`,
+		Statement* desBody := defaultParameter( pr, defVal, size((Params)`<{Param ","}* bef>`), body );
+
 Function desugar( f:(Function)`function ( <{Param ","}* bef>, <Id pr> = <Expression defVal>, <{Param ","}* rest> ) { <Statement* body> }` )
 	= (Function)`function(<{Param ","}* bef>, <Param p>, <{Param ","}* rest>) { <Statement* desBody> }`
 	when

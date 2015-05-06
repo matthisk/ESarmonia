@@ -1,5 +1,5 @@
 module extensions::destructuring::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 extend extensions::destructuring::desugar::Shared;
 

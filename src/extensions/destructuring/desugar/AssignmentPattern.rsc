@@ -1,5 +1,5 @@
 module extensions::destructuring::desugar::AssignmentPattern
-extend desugar::Desugar;
+extend desugar::Base;
 
 import IO;
 import extensions::destructuring::Syntax;

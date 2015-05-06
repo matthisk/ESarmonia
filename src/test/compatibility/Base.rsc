@@ -2,7 +2,7 @@ module \test::compatibility::Base
 extend \test::Base;
 extend runtime::Visitor;
 
-import Desugar;
+import desugar::Desugar;
 import Parse;
 import ParseTree;
 
@@ -26,7 +26,7 @@ private bool runNodeProcess( &T <: Tree dpt ) {
 Spec tryRunning( str input ) {
         return bool() {
                 try {
-                        dpt = runtimeVisitor( desugar( parse( #start[Source], input ) ) );
+                        dpt = desugarAll( parse( #start[Source], input ) );
                         return runNodeProcess( dpt );
                 } catch exception : {
                         println( 4, "failed with error: <exception>" );

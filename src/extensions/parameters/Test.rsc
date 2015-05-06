@@ -77,6 +77,13 @@ test bool desugaringRestParameter() {
 			>]
 		)),
 		
+		\it( "can be desugared within parameter of named function", tryDesugar(
+			"function f( ...args ) { return args; }",
+			[<"function f() { for( var _len = arguments.length, args = Array( _len \> 1 ? _len - 1 : 0 ), _key = 0; _key \< _len; _key++ ) { args[_key - 1] = arguments[_key]; } return args; }", bool(pt) {
+			   	return /(Statement)`function f() { for( var _len = arguments.length, args = Array( _len \> 1 ? _len - 1 : 0 ), _key = 0; _key \< _len; _key++ ) { args[_key - 1] = arguments[_key]; } return args; }` := pt; 
+			}>]
+		)),
+		
 		\it( "can be desugared as final parameter", tryDesugar(
 			"function( x, y, ...args ) { return args; }",
 			[< "function( x, y ) { for( var _len = arguments.length, args = Array( _len \> 1 ? _len - 1 : 0 ), _key = 2; _key \< _len; _key++) { args[_key - 1] = arguments[_key]; } return args; }",

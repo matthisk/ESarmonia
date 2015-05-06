@@ -1,5 +1,5 @@
 module extensions::class::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 import util::Maybe;
 import Ambiguity;

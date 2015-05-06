@@ -3,29 +3,82 @@ module Plugin
 import IO;
 import ParseTree;
 import util::IDE;
+import Message;
 
-import lang::javascript::saner::Syntax;
-import Desugar;
+import core::Syntax;
+import core::resolve::Resolve;
+import core::resolve::Util;
+
 import Parse;
+import desugar::Desugar;
 
-private str LANG = "SweetrJS";
-private str EXT = "swjs";
+anno rel[loc,loc,str] Tree@hyperlinks;
 
 void main() {
-
-	registerLanguage(LANG, EXT, createLanguage );
-
-	registerContributions(LANG, {
-		popup(
-			menu("ES6", [ action("Transform to ES5", transform)] )
-		)
-	});
-
+	makeRegistrar( "Sweetr JS", "sjs" )();
 }
 
-start[Source] createLanguage( str src, loc l ) = parse( src, l );
+void() makeRegistrar(str lang, str ext) {
+	start[Source] js;
+	Refs xrefs;
+	map[loc,str] renaming;
+	
+	return void() {
+		registerLanguage(lang, ext, Tree(str src, loc l) {
+			return parse( src, l);
+		});
+		
+		registerContributions(lang, {
+			annotator(Tree(Tree pt) {
+				if(start[Source] s := pt) {
+					<js, xref, renaming> = desugarAndResolve(s);
+					s = addHoverDocs(s, renaming);
+					xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
+          			return s[@hyperlinks=xref2];
+        		}
+        		return pt[@messages={error("BUG: not JS", pt@\loc)}];
+			}),
+			
+			builder(set[Message](Tree tree) {
+				fixed = rename(js, renaming);
+				out = tree@\loc.top[extension="js"];
+				writeFile(out, unparse(fixed));
+				return  {};
+			})
+		});
+	};
+}
 
-void transform( start[Source] pt ) = transform( pt, |tmp:///| );
-void transform( start[Source] pt, loc selection ) {
-	println( desugar( pt ) );
+start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
+  return visit (s) {
+    case Statement stm: {
+      stm2 = desugar(stm);
+      if (stm2 != stm) {
+        insert stm[@doc="<stm2>"];
+      }
+    }
+    case Expression exp: {
+      exp2 = desugar(exp);
+      if (exp2 != exp) {
+        insert exp[@doc="<exp2>"];
+      }
+    }
+    case Id x =>x[@doc=renaming[x@\loc]]
+      when x@\loc in renaming
+  }
+}
+
+tuple[start[Source], Refs, map[loc, str]] desugarAndResolve(start[Source] src) {
+  js = uniqueify(desugarAll(src));
+  <lookup, getRenaming> = makeResolver();
+  xref = resolve(js.top, lookup);
+  renaming = getRenaming(xref);
+  return <js, xref, renaming>;
+}
+
+start[Source] rename(start[Source] src, map[loc, str] renaming) {
+  return visit (src) {
+    case Id x => parse(#Id, renaming[x@\loc])
+      when x@\loc in renaming
+  }
 }

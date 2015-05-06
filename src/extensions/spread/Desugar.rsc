@@ -1,8 +1,9 @@
 module extensions::spread::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 import IO;
 import extensions::spread::Syntax;
+import extensions::spread::Runtime;
 
 alias RefScope = tuple[ Expression, Expression ];
 
@@ -22,8 +23,8 @@ Expression desugar( (Expression)`[ <{ArgExpression ","}* bef>, ...<Expression ar
 		(Expression)`[<{ArgExpression ","}* desRest>]` := desugarSpread( (Expression)`[<{ArgExpression ","}* rest>]` );
 
 private default Expression desugarToConsumableArray( Expression e ) = e;
-private Expression desugarToConsumableArray( (Expression)`<Id name>` ) = (Expression)`_toConsumableArray(<Id name>)`;
-private Expression desugarToConsumableArray( (Expression)`<Literal lit>` ) = (Expression)`_toConsumableArray(<Literal lit>)`;
+private Expression desugarToConsumableArray( (Expression)`<Id name>` ) = setRuntime( (Expression)`_toConsumableArray(<Id name>)`, _toConsumableArray );
+private Expression desugarToConsumableArray( (Expression)`<Literal lit>` ) = setRuntime( (Expression)`_toConsumableArray(<Literal lit>)`, _toConsumableArray );
 
 private Expression desugarSpread( e:(Expression)`[]` ) = (Expression)`[]`;
 private default Expression desugarSpread( e:(Expression)`[<{ArgExpression ","}* els>]` ) = (Expression)`[<Expression e>]`;		

@@ -1,5 +1,5 @@
 module extensions::forof::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 import extensions::forof::Syntax;
 import IO;

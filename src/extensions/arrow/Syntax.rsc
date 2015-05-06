@@ -2,7 +2,7 @@ module extensions::arrow::Syntax
 extend core::Syntax;
 
 syntax Expression
-	= Arrow
+  = Arrow
 	;
 
 syntax Arrow

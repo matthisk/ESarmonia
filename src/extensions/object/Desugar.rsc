@@ -1,5 +1,5 @@
 module extensions::object::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 extend extensions::object::desugar::Shared;
 

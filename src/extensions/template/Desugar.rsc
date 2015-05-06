@@ -1,5 +1,5 @@
 module extensions::template::Desugar
-extend desugar::Desugar;
+extend desugar::Base;
 
 import String;
 import IO;
