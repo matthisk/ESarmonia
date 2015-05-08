@@ -2,19 +2,38 @@ module extensions::template::Syntax
 extend core::Syntax;
 
 syntax Literal
-	= TemplateLiteral
+	= template: TemplateLiteral template
+	| taggedTemplate: Id tag TemplateLiteral template
 	;
 
 syntax TemplateLiteral
-	= [`] TemplateSpans [`]
+	= NoSubstitutionTemplate
+	| TemplateHead Expression TemplateSpans
 	;
 
 syntax TemplateSpans
-	= {TemplateChars Template}*
+	= TemplateTail
+	| TemplateMiddleList Expression TemplateTail 
 	;
 
-syntax Template
-	= "${" Expression "}"
+syntax TemplateMiddleList
+	= {TemplateMiddle Expression}+
+	;
+
+lexical NoSubstitutionTemplate
+	= [`] TemplateChars [`]
+	;
+
+lexical TemplateHead
+	= [`] TemplateChars cs "${"
+	;
+
+lexical TemplateMiddle
+	= "}" TemplateChars cs "${"
+	;
+
+lexical TemplateTail
+	= "}" TemplateChars cs [`]
 	;
 
 lexical TemplateChars = TemplateChar*;
