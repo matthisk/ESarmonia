@@ -9,6 +9,7 @@ extend extensions::parameters::Desugar;
 extend extensions::spread::Desugar;
 extend extensions::forof::Desugar;
 extend extensions::destructuring::Desugar;
+extend extensions::template::Desugar;
 
 start[Source] desugarAll(start[Source] src) {
 	return runtimeVisitor( desugarVisitor( src ) );

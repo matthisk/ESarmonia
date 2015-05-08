@@ -8,6 +8,7 @@ extend extensions::parameters::Syntax;
 extend extensions::spread::Syntax;
 extend extensions::forof::Syntax;
 extend extensions::letconst::Syntax;
+extend extensions::template::Syntax;
 
 start[Source] parse( str source, loc l ) = parse( #start[Source], source, l );
 start[Source] parse( str source ) = parse( #start[Source], source );
