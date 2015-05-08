@@ -26,7 +26,7 @@ private bool runNodeProcess( &T <: Tree dpt ) {
 Spec tryRunning( str input ) {
         return bool() {
                 try {
-                        dpt = desugarAll( parse( #start[Source], input ) );
+                        dpt = desugarAll( parse( #start[Source], input ) );										
                         return runNodeProcess( dpt );
                 } catch exception : {
                         println( 4, "failed with error: <exception>" );
