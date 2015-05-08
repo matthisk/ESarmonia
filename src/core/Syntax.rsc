@@ -88,8 +88,7 @@ syntax ArgExpression
 // Todo: Right now you can put any type of Expression on the lhs of a variableAssignment like: 5 = y; We only want to do this for a few cases however
 // Rather than exclude everything other than those cases it would be much easier to whitelist the few that ARE allowed.
 syntax Expression
-  = array0: "[" ArgExpression? "]"
-  | array: "[" ArgExpression? "," {ArgExpression? ","}+ "]"
+  = array: "[" {ArgExpression ","}* ","? "]"
   | objectDefinition:"{" {PropertyAssignment ","}* ","? "}"
   | this: "this"
   | var: Id 
