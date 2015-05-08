@@ -17,7 +17,7 @@ Function desugar( s:(Function)`function(<Params ps>) {<Statement* body>}` ) {
 Source desugar( Source src ) = desugarArrow( src, thisReplacement = (Expression)`undefined` )
 	when
 		/(Expression)`(<Params _>) =\> <Expression _>` := src
-		|| /(Expression)`<Param _>j =\> <Expression _>` := src
+		|| /(Expression)`<Param _> =\> <Expression _>` := src
 		|| /(Expression)`(<Params _>) =\> { <Statement* _> }` := src
 		|| /(Expression)`<Param _> =\> { <Statement* _> }` := src;
 
