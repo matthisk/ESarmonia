@@ -1,5 +1,5 @@
+@cachedParser{extensions.destructuring.cached.Parser}
 module extensions::destructuring::desugar::AssignmentPattern
-extend desugar::Base;
 
 import IO;
 import extensions::destructuring::Syntax;

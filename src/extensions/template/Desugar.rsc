@@ -1,12 +1,12 @@
 @cachedParser{extensions.template.cached.Parser}
 module extensions::template::Desugar
 extend desugar::Base;
+extend extensions::template::Syntax;
 
 import ParseTree;
 import String;
 import IO;
 
-import extensions::template::Syntax;
 import extensions::template::Runtime;
 
 data TemplatePart

@@ -2,7 +2,7 @@
 module extensions::arrow::Desugar
 extend desugar::Base;
 
-import extensions::arrow::Syntax;
+extend extensions::arrow::Syntax;
 import IO;
 
 Function desugar( s:(Function)`function(<Params ps>) {<Statement* body>}` ) {

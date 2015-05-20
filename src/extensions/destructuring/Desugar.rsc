@@ -1,11 +1,10 @@
 @cachedParser{extensions.destructuring.cached.Parser}
 module extensions::destructuring::Desugar
 extend desugar::Base;
-
+extend extensions::destructuring::Syntax;
 extend extensions::destructuring::desugar::Shared;
 
-import extensions::destructuring::desugar::AssignmentPattern;
-import extensions::destructuring::Syntax;
+extend extensions::destructuring::desugar::AssignmentPattern;
 
 import IO;
 

@@ -2,7 +2,6 @@ module extensions::parameters::Test
 extend \test::Base;
 extend desugar::Visitor;
 
-import extensions::parameters::Syntax;
 import extensions::parameters::Desugar;
 
 test bool parsingParameters() {

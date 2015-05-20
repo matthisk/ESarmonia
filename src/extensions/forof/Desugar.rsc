@@ -1,8 +1,8 @@
 @cachedParser{extensions.forof.cached.Parser}
 module extensions::forof::Desugar
 extend desugar::Base;
+extend extensions::forof::Syntax;
 
-import extensions::forof::Syntax;
 import IO;
 
 Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>` )

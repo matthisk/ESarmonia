@@ -1,7 +1,6 @@
 module extensions::forof::Test
 extend \test::Base;
 
-import extensions::forof::Syntax;
 import extensions::forof::Desugar;
 
 test bool parsing() {

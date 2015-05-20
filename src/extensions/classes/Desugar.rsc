@@ -1,11 +1,12 @@
 @cachedParser{extensions.classes.cached.Parser}
 module extensions::classes::Desugar
 extend desugar::Base;
+extend extensions::classes::Syntax;
 
 import util::Maybe;
 import Ambiguity;
 import IO;
-import extensions::classes::Syntax;
+
 import extensions::classes::Runtime;
 import extensions::classes::desugar::Super;
 import extensions::classes::desugar::Method;

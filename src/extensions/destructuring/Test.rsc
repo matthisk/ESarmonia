@@ -3,7 +3,6 @@ extend desugar::Visitor;
 extend runtime::Visitor;
 extend \test::Base;
 
-import extensions::destructuring::Syntax;
 import extensions::destructuring::Desugar;
 
 test bool parsingObjectDestructure() {

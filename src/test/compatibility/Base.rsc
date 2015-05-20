@@ -3,7 +3,6 @@ extend \test::Base;
 extend runtime::Visitor;
 
 import desugar::Desugar;
-import parser::Parse;
 import ParseTree;
 
 import util::ShellExec;

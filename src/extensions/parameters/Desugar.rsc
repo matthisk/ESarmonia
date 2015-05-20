@@ -1,9 +1,9 @@
 @cachedParser{extensions.parameters.cached.Parser}
 module extensions::parameters::Desugar
 extend desugar::Base;
+extend extensions::parameters::Syntax;
 
 import IO;
-import extensions::parameters::Syntax;
 
 Function desugar( f:(Function)`function <Id name>( ...<Id rest> ) { <Statement* body> }` )
 	= (Function)`function <Id name>() { <Statement desBody> }`

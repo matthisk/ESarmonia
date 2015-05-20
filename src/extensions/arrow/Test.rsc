@@ -4,7 +4,6 @@ extend \test::Base;
 
 import IO;
 
-import extensions::arrow::Syntax;
 import extensions::arrow::Desugar;
 
 test bool parsingArrowFunctions() {	

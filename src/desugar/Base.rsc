@@ -1,7 +1,9 @@
+@cachedParser{core.cached.Parser}
 module desugar::Base
 
 import ParseTree;
-extend desugar::Declarations;
+import desugar::Declarations;
+import core::Syntax;
 
 anno Statement Expression@runtime;
 anno Statement Statement@runtime;

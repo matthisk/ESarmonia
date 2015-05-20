@@ -1,5 +1,5 @@
+@cachedParser{extensions.classes.cached.Parser}
 module extensions::classes::desugar::Method
-import desugar::Desugar;
 
 import util::Maybe;
 import extensions::classes::Syntax;

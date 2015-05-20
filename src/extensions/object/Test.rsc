@@ -3,7 +3,6 @@ extend desugar::Visitor;
 extend runtime::Visitor;
 extend \test::Base;
 
-import extensions::object::Syntax;
 import extensions::object::Desugar;
 import extensions::object::Runtime;
 

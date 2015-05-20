@@ -1,3 +1,4 @@
+@cachedParser{extensions.classes.cached.Parser}
 module extensions::classes::desugar::Super
 
 import util::Maybe;

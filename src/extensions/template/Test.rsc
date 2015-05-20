@@ -2,7 +2,6 @@ module extensions::template::Test
 extend \test::Base;
 extend desugar::Visitor;
 
-import extensions::template::Syntax;
 import extensions::template::Desugar;
 
 test bool parsingStringTemplate() {	

@@ -1,11 +1,11 @@
 @cachedParser{extensions.object.cached.Parser}
 module extensions::object::Desugar
 extend desugar::Base;
+extend extensions::object::Syntax;
 
 extend extensions::object::desugar::Shared;
 
 import IO;
-import extensions::object::Syntax;
 import extensions::object::Runtime;
 
 @doc{ Here trailing commas in object literal notation are removed,

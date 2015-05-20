@@ -3,7 +3,6 @@ extend desugar::Visitor;
 extend runtime::Visitor;
 extend \test::Base;
 
-import extensions::spread::Syntax;
 import extensions::spread::Desugar;
 
 test bool parsingSpreadOperator() {

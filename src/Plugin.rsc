@@ -9,7 +9,7 @@ import core::Syntax;
 import core::resolve::Resolve;
 import core::resolve::Util;
 
-import parser::Parse;
+//import parser::Parse;
 import desugar::Desugar;
 
 anno rel[loc,loc,str] Tree@hyperlinks;
@@ -25,7 +25,7 @@ void() makeRegistrar(str lang, str ext) {
 	
 	return void() {
 		registerLanguage(lang, ext, Tree(str src, loc l) {
-			return parse( src, l);
+			return parse( #start[Source], src, l);
 		});
 		
 		registerContributions(lang, {
