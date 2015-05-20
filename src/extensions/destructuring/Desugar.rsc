@@ -1,3 +1,4 @@
+@cachedParser{extensions.destructuring.cached.Parser}
 module extensions::destructuring::Desugar
 extend desugar::Base;
 

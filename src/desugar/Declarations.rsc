@@ -1,5 +1,4 @@
 module desugar::Declarations
-import core::Syntax;
 
 import ParseTree;
 import Set;

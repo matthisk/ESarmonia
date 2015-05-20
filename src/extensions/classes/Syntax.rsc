@@ -1,4 +1,4 @@
-module extensions::class::Syntax
+module extensions::classes::Syntax
 extend core::Syntax;
 
 syntax Statement

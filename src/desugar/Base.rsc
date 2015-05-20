@@ -1,8 +1,7 @@
 module desugar::Base
 
-import desugar::Declarations;
-import core::Syntax;
 import ParseTree;
+extend desugar::Declarations;
 
 anno Statement Expression@runtime;
 anno Statement Statement@runtime;

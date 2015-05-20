@@ -1,7 +1,8 @@
-module Parse
+@cachedParser{parser.cached.SweeterJSCachedParser}
+module parser::Parse
 
 extend extensions::arrow::Syntax;
-extend extensions::class::Syntax;
+extend extensions::classes::Syntax;
 extend extensions::destructuring::Syntax;
 extend extensions::object::Syntax;
 extend extensions::parameters::Syntax;

@@ -9,7 +9,7 @@ import core::Syntax;
 import core::resolve::Resolve;
 import core::resolve::Util;
 
-import Parse;
+import parser::Parse;
 import desugar::Desugar;
 
 anno rel[loc,loc,str] Tree@hyperlinks;

@@ -1,3 +1,4 @@
+@cachedParser{extensions.forof.cached.Parser}
 module extensions::forof::Desugar
 extend desugar::Base;
 

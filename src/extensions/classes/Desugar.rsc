@@ -1,13 +1,14 @@
-module extensions::class::Desugar
+@cachedParser{extensions.classes.cached.Parser}
+module extensions::classes::Desugar
 extend desugar::Base;
 
 import util::Maybe;
 import Ambiguity;
 import IO;
-import extensions::class::Syntax;
-import extensions::class::Runtime;
-import extensions::class::desugar::Super;
-import extensions::class::desugar::Method;
+import extensions::classes::Syntax;
+import extensions::classes::Runtime;
+import extensions::classes::desugar::Super;
+import extensions::classes::desugar::Method;
 
 Expression desugar( (Expression)`class <ClassTail tail>` )
 	= desugar( nothing(), tail );

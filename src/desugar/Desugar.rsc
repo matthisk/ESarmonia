@@ -1,9 +1,10 @@
+@cachedParser{parser.cached.SweeterJSCachedParser}
 module desugar::Desugar
 extend desugar::Visitor;
 extend runtime::Visitor;
 
 extend extensions::arrow::Desugar;
-extend extensions::class::Desugar;
+extend extensions::classes::Desugar;
 extend extensions::object::Desugar;
 extend extensions::parameters::Desugar;
 extend extensions::spread::Desugar;

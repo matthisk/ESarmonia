@@ -1,3 +1,4 @@
+@cachedParser{extensions.letconst.cached.Parser}
 module extensions::letconst::Desugar
 import extensions::letconst::Syntax;
 

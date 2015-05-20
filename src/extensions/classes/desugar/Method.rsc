@@ -1,10 +1,10 @@
-module extensions::class::desugar::Method
+module extensions::classes::desugar::Method
 import desugar::Desugar;
 
 import util::Maybe;
-import extensions::class::Syntax;
-import extensions::class::desugar::Super;
-import extensions::class::Runtime;
+import extensions::classes::Syntax;
+import extensions::classes::desugar::Super;
+import extensions::classes::Runtime;
 import extensions::object::desugar::Shared;
 
 Statement desugarStaticMethod( Id name, Maybe[Id] parent, (ClassElement)`<PropertyName methodName>(<Params ps>) { <Statement* body> }` )

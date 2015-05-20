@@ -1,3 +1,4 @@
+@cachedParser{extensions.arrow.cached.Parser}
 module extensions::arrow::Desugar
 extend desugar::Base;
 

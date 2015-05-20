@@ -1,3 +1,4 @@
+@cachedParser{extensions.template.cached.Parser}
 module extensions::template::Desugar
 extend desugar::Base;
 

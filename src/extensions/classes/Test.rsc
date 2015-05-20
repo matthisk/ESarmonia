@@ -1,4 +1,4 @@
-module extensions::class::Test
+module extensions::classes::Test
 extend desugar::Visitor;
 extend runtime::Visitor;
 extend \test::Base;

@@ -1,8 +1,8 @@
-module extensions::class::desugar::Super
+module extensions::classes::desugar::Super
 
 import util::Maybe;
 import ParseTree;
-import extensions::class::Syntax;
+import extensions::classes::Syntax;
 
 Statement* desugarSuperConstructorCall( just(Id parent), Statement* stms ) {
 	return top-down-break visit( stms ) {
