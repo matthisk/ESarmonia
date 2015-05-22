@@ -18,6 +18,10 @@ default Expression desugar( Expression e ) = e;
 default Function desugar( Function f ) = f;
 default Source desugar( Source src ) = src;
 
+public Expression undefined = (Expression)`undefined`;
+public Expression this = (Expression)`this`;
+public Expression arguments = (Expression)`arguments`;
+
 Expression toStringLiteral( str s ) = [Expression]"\"<s>\"";
 
 Statement* scope( Statement* body ) 

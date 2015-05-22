@@ -5,40 +5,42 @@ extend desugar::Base;
 extend extensions::arrow::Syntax;
 import IO;
 
-Function desugar( s:(Function)`function(<Params ps>) {<Statement* body>}` ) {
-	desugaredBody = desugarArrow( body ); 
+Source desugar( Source src ) = desugarArrows( src, undefined, undefined );
+	  
+Function desugar( f:(Function)`function(<Params ps>) {<Statement* body>}` )
+	= f[body = desugarArrows(body, this, arguments)];
 
-	if( desugaredBody != body ) {
-		s = (Function)`function (<Params ps>) { var _this = this; <Statement* desugaredBody> }`;
-	}
-	
-	return s;
-}
+Expression wrap( Params ps, Statement* body, Expression this, Expression arguments )
+	= (Expression)`(function(_this,_arguments) { 
+				  '		return function(<Params ps>) { 
+				  '		<Statement* body> 
+				  '		}; 
+				  '})(<Expression this>,<Expression arguments>)`;
 
-Source desugar( Source src ) = desugarArrow( src, thisReplacement = (Expression)`undefined` )
-	when
-		/(Expression)`(<Params _>) =\> <Expression _>` := src
-		|| /(Expression)`<Param _> =\> <Expression _>` := src
-		|| /(Expression)`(<Params _>) =\> { <Statement* _> }` := src
-		|| /(Expression)`<Param _> =\> { <Statement* _> }` := src;
+Statement* replace( Expression e ) = statementStar( (Statement)`return <Expression e>;` )
+	when Expression e := replaceThisArgumentsReference( e );
+Statement* replace( Statement* b ) = replaceThisArgumentsReference( b );
 
-private &T replaceThisReference( &T <: Tree e, Expression replacement ) {
+default bool deepMatchArrowFunction( _ ) = false;
+bool deepMatchArrowFunction( /(Expression)`(<Params _>) =\> <Expression _>` ) = true;
+bool deepMatchArrowFunction( /(Expression)`<Param _> =\> <Expression _>` ) = true;
+bool deepMatchArrowFunction( /(Expression)`(<Params _>) =\> { <Statement* _> }` ) = true;
+bool deepMatchArrowFunction( /(Expression)`<Param _> =\> { <Statement* _> }` ) = true;
+
+private &T <: Tree replaceThisArgumentsReference( &T <: Tree e ) {
 	return top-down-break visit (e) {
 		case Function _: ;
-		case (Expression)`this` => replacement
+		case (Expression)`this` => (Expression)`_this`
+		case (Expression)`arguments` => (Expression)`_arguments`
 	}
 }
 
-private &T <: Tree desugarArrow( &T <: Tree body, Expression thisReplacement = (Expression)`_this` ) {
-	return top-down-break visit ( body ) {
+&T <: Tree desugarArrows( &T <: Tree src, Expression this, Expression arguments) {
+	return top-down-break visit( src ) {
 		case Function _: ;
-		case (Expression)`<Param p> =\> <Expression e>` => (Expression)`function(<Param p>) { return <Expression e2>; }`
-			when e2 := replaceThisReference( e, thisReplacement )
-		case (Expression)`<Param p> =\> { <Statement* body> }` => (Expression)`function(<Param p>) { <Statement* body2> }`
-			when body2 := replaceThisReference( body, thisReplacement )
-		case (Expression)`(<Params ps>) =\> <Expression e>` => (Expression)`function(<Params ps>) { return <Expression e2>; }`
-			when e2 := replaceThisReference( e, thisReplacement )
-		case (Expression)`(<Params ps>) =\> { <Statement* body> }` => (Expression)`function(<Params ps>) { <Statement* body2> }`
-			when body2 := replaceThisReference( body, thisReplacement )
+		case (Expression)`(<Params ps>) =\> <Expression e>` => wrap( ps, replace(e), this, arguments )
+		case (Expression)`<Param p> =\> <Expression e>` => wrap( params(p), replace(e), this, arguments )
+		case (Expression)`(<Params ps>) =\> { <Statement* b> }` => wrap( ps, replace(b), this, arguments )
+		case (Expression)`<Param p> =\> { <Statement* b> }` => wrap( params(p), replace(b), this, arguments )
 	}
 }
