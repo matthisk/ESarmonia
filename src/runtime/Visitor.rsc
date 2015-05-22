@@ -4,7 +4,7 @@ import IO;
 import util::Maybe;
 import core::Syntax;
 
-start[Source] runtimeVisitor( start[Source] pt ) {
+start[Source] runtimeVisitor( pt:(start[Source])`<Statement* src>` ) {
 	set[Statement] runtime = {};
 	
 	visit( pt ) {
@@ -20,9 +20,16 @@ start[Source] runtimeVisitor( start[Source] pt ) {
 		}
 	}
 	
-	return fillRuntime( pt, runtime );
+	Statement* rt = makeRuntime(runtime);
+    return (start[Source])`<Statement* rt> <Statement* src>`;
 }
 
-start[Source] fillRuntime( start[Source] pt, {} ) = pt;
-start[Source] fillRuntime( start[Source] pt, { Statement s, *rest } )
-	= fillRuntime( (start[Source])`<Statement s> <Statement* pt>`, rest );
+Statement* makeRuntime( set[Statement] runtime ) {
+	Statement result = (Statement)`{}`;
+
+	for( s <- runtime, (Statement)`{ <Statement* stms> }` := result ) {
+		result = (Statement)`{ <Statement s> <Statement* stms> }`;
+	}
+	
+	if( (Statement)`{ <Statement* stms> }` := result ) return stms;
+}

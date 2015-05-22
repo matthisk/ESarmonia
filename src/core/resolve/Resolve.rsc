@@ -11,7 +11,7 @@ Refs resolve((Source)`<Statement* stats>`, Lookup lookup)
 Refs resolve(Statement* stats, Scope sc, Lookup lookup) {
   Refs refs = {};
   for (s <- stats) {
-    //println("Resolving stat: <s>");
+    println("Resolving stat: <s>");
     switch (s) {
       case (Statement)`let <{VariableDeclaration ","}+ vds>;`:
         for (vd <- vds) {

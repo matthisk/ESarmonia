@@ -21,12 +21,6 @@ Statement* replace( Expression e ) = statementStar( (Statement)`return <Expressi
 	when Expression e := replaceThisArgumentsReference( e );
 Statement* replace( Statement* b ) = replaceThisArgumentsReference( b );
 
-default bool deepMatchArrowFunction( _ ) = false;
-bool deepMatchArrowFunction( /(Expression)`(<Params _>) =\> <Expression _>` ) = true;
-bool deepMatchArrowFunction( /(Expression)`<Param _> =\> <Expression _>` ) = true;
-bool deepMatchArrowFunction( /(Expression)`(<Params _>) =\> { <Statement* _> }` ) = true;
-bool deepMatchArrowFunction( /(Expression)`<Param _> =\> { <Statement* _> }` ) = true;
-
 private &T <: Tree replaceThisArgumentsReference( &T <: Tree e ) {
 	return top-down-break visit (e) {
 		case Function _: ;

@@ -14,5 +14,6 @@ extend extensions::template::Desugar;
 extend extensions::letconst::Desugar;
 
 start[Source] desugarAll(start[Source] src) {
+	//return desugarVisitor( src );
 	return runtimeVisitor( desugarVisitor( src ) );
 }
