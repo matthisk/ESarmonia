@@ -1,14 +1,8 @@
-module parser::cached::CacheParser
+module desugar::cached::CacheParser
+extend desugar::cached::CacheParserBase;
 
-import lang::rascal::grammar::ParserGenerator;
-import IO;
-import Grammar;
+extend desugar::Desugar;
 
-void saveParser() {
-	try file; catch: loc file = |project://rascal-sweetjs/src/parser/cached/SweeterJSCachedParser.java|;
-	try dir;  catch: str dir = "parser.cached";
-	try parserName; catch: str parserName = "SweeterJSCachedParser";
-	
-	p = newGenerate( dir, parserName, grammar(#start[Source]));
-	writeFile(file,p);
-}
+loc file = |project://rascal-sweetjs/src/desugar/cached/Parser.java|;
+str dir = "desugar.cached";
+str parserName = "Parser";

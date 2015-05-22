@@ -1,5 +1,5 @@
 module extensions::template::cached::CacheParser
-extend parser::cached::CacheParser;
+extend desugar::cached::CacheParserBase;
 
 import extensions::template::Syntax;
 

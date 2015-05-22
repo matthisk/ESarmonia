@@ -1,5 +1,5 @@
 module extensions::classes::cached::CacheParser
-extend parser::cached::CacheParser;
+extend desugar::cached::CacheParserBase;
 
 import extensions::classes::Syntax;
 

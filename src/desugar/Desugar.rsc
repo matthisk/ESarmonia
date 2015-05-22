@@ -1,4 +1,4 @@
-@cachedParser{parser.cached.SweeterJSCachedParser}
+@cachedParser{desugar.cached.Parser}
 module desugar::Desugar
 extend desugar::Visitor;
 extend runtime::Visitor;
@@ -11,7 +11,7 @@ extend extensions::spread::Desugar;
 extend extensions::forof::Desugar;
 extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
-extend extensions::letconst::Desguar;
+extend extensions::letconst::Desugar;
 
 start[Source] desugarAll(start[Source] src) {
 	return runtimeVisitor( desugarVisitor( src ) );

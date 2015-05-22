@@ -2,4 +2,4 @@
 module extensions::letconst::Desugar
 extend extensions::letconst::Syntax;
 
-Declarator desugar( (Declarator)`<LetOrConst _>` ) = (Declarator)`var`;
+//Declarator desugar( (Declarator)`<LetOrConst _>` ) = (Declarator)`var`;

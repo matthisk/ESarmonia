@@ -1,5 +1,5 @@
 module extensions::forof::cached::CacheParser
-extend parser::cached::CacheParser;
+extend desugar::cached::CacheParserBase;
 
 import extensions::forof::Syntax;
 
