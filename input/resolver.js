@@ -1,3 +1,10 @@
-function () { var _this = this; var _this$0 = undefined;
-	_this$0;
-	return function(_this$1) { _this$1; _this; }; }
+{
+	let x = 1;
+}
+{
+	let x = 2;
+	{ 
+		let x = 3; 
+	}
+}
+x;

@@ -3,92 +3,127 @@ module extensions::letconst::Resolve
 
 import ParseTree;
 import IO;
+import util::Maybe;
 import extensions::letconst::Syntax;
 
-alias Env = map[str name,loc decl];
-alias Refs = rel[loc use, loc def, str name, bool valid];
-alias Lookup = set[Def](str, loc, ScopeTree);
+alias Env = map[str name,tuple[int declarator,loc at] decl];
+alias SiblingScopes = map[loc, Env];
+
+alias Refs = rel[loc use, loc def, str name, Maybe[loc] redecl];
+
+alias Declare = void(loc, str, loc, ScopeTree);
 alias GetRenaming = map[loc,str](Refs refs);
+alias GetErrors = map[loc,Statement]();
 
 alias Def = tuple[loc def,bool valid];
 
 data ScopeTree
-	= scope( Env )
+	= scope( Env current )
 	| scope( Env current, set[Env] siblings, ScopeTree parent )
+	| closure( Env current, ScopeTree parent )
 	;
 
-start[Source] debug( loc l ) {
-	pt = parse( #start[Source], l );
-	<lookup,getRenaming> = makeResolver();
-	refs = resolve( pt.top, lookup );
+int LET = 0;
+int CONST = 1;
+int VAR = 2;
+
+start[Source] resolve( start[Source] pt ) {
+	<declare, getRenaming, getErrors> = makeResolver();
+	refs = resolve( pt.top, declare );
 	ren = getRenaming(refs);
+	errors = ();
 	
-	println("REFERENCES");
-	iprintln(refs);
+	for( <use,def,name,just(loc e)> <- refs ) {
+		errors[e] = (Expression)`console.error("re-assignment of const forbidden")`;
+	}
 	
-	println("TO RENAME:");
-	iprintln(ren);
-	
-	return rename(pt,ren); 
+	statErrors = getErrors();
+	iprintln(statErrors);
+	return rename(pt,ren,errors,statErrors); 
 }
 
-start[Source] rename(start[Source] src, map[loc, str] renaming) {
+start[Source] rename(start[Source] src, map[loc, str] renaming, map[loc, Expression] errors,map[loc, Statement] statErrors) {
   return visit (src) {
+  	case Statement s => statErrors[s@\loc]
+  		when s@\loc in statErrors
+  	case Expression e => errors[e@\loc]
+  		when e@\loc in errors
     case Id x => parse(#Id, renaming[x@\loc])
       when x@\loc in renaming
   }
 }
 
-tuple[Lookup, GetRenaming] makeResolver() {
+tuple[Declare, GetRenaming, GetErrors] makeResolver() {
   map[loc, str] toRename = ();
+  map[loc, Statement] toError = ();
   
-  set[Def] lookup(str name, loc use, ScopeTree scTree ) {
-	set[Def] refs = {};
-	bool found = false;
-	
-	set[Def] make( loc def, str name, bool Found ) {
-		if( found ) { toRename[def] = name; }
-		return {<def,!found>};
-	}
-	
-	println("Lookup for <name> at <use>");
-	iprintln(scTree);
-	top-down visit(scTree) {
-		case scope( Env sc, set[Env] siblings, ScopeTree parent ) : {
-		    if( name in sc ) {
-		    	refs += make( sc[name], name, found );
-		 		found = true;
-		    }
-		    
-		    for( env <- siblings, name in env ) {
-		    	def = env[name];
+  void declare( loc stat, str name, loc def, ScopeTree scTree ) {	
+  	top-down visit(scTree) {
+  		// Declaration capture cannot happen outside of functions closure
+  		case closure( Env sc, ScopeTree parent ) : {
+  			return;
+  		}
+  		
+  		case scope( Env sc, set[Env] siblings, ScopeTree parent ) : {
+  			if( name in sc && sc[name].at != def ) {
+  				if(sc[name].declarator == CONST) toError[stat] = (Statement)`throw new ReferenceError("Redeclaration of const");`;
+  				else toRename[def] = name;
+  			}
+  			
+  			for( env <- siblings, name in env ) {
 		    	toRename[def] = name;
-		    	refs += <def,false>;
 		    }
-		}
-		case scope( Env rt ) : {
-			if(name in rt) { 
-	    		refs += make(rt[name],name,found);
-	    	}
-		}
-	}
-	
-	return refs;
+  		}
+  		case scope( Env rt ) : {
+  			if(name in rt && rt[name].at != def) {
+  				if(sc[name].declarator == CONST) toError[stat] = (Statement)`throw new ReferenceError();`;
+  				else toRename[def] = name;
+  			}
+  		}
+  	}
   }
   
   map[loc,str] getRenaming(Refs refs) {
     ren = ();
     allNames = refs<2>;
-    for (d <- toRename) {
-      n = gensym(allNames, toRename[d]);
-      allNames += {n};
-      ren[d] = n;
-      ren += ( u: n | <u, d, _, true> <- refs ); 
+    for(d <- toRename) {
+    	n = gensym(allNames, toRename[d]);
+    	allNames += {n};
+    	
+    	ren[d] = n;
+    	ren += ( u : n | <u,def,_,_> <- refs, def == d );
     }
     return ren;
   }
   
-  return <lookup, getRenaming>;
+  map[loc,Statement] getErrors() {
+  	return toError;
+  }
+  
+  return <declare, getRenaming, getErrors>;
+}
+
+set[loc] lookup(str name, loc use, ScopeTree scTree) {
+	top-down visit(scTree) {
+	    case ScopeTree s : {
+	    	if(name in s.current) return {s.current[name].at};
+	    }
+	}
+	
+	return {};
+}
+
+set[loc] lookupAssignment(str name, loc use, ScopeTree scTree) {
+	top-down visit(scTree) {
+		case ScopeTree s : {
+			if(name in s.current && s.current[name].declarator == CONST)
+				return {s.current[name].at};
+			if(name in s.current)
+				return {};
+		}
+	}
+	
+	return {};
 }
 
 str gensym(set[str] ns, str base) = gensym(ns, base + "_", 0);
@@ -101,116 +136,87 @@ str gensym(set[str] ns, str base, int i) {
   return n;
 }
 
-Refs resolve(src:(Source)`<Statement* stats>`, Lookup lookup) 
-  = resolve( stats, scope( parent ), lookup )
-  	when Env parent := letConstDefs( stats );
+Refs resolve(src:(Source)`<Statement* stats>`, Declare declare) 
+  = resolve( stats, scope( () ), declare );
   
-Refs resolve(Function f, Lookup lookup)
-	= resolve( f.body, scope( letConstDefs(f.body) ), lookup );  
+Refs resolve(Function f, ScopeTree scTree, Declare declare )
+	= resolve( f.body, closure( (), scTree ), declare );  
 
-Refs resolve( Statement* stats, ScopeTree scTree, Lookup lookup ) {
+ScopeTree addEnv( scope( Env current ), Env new ) = scope( current + new );
+ScopeTree addEnv( scope( Env current, set[Env] siblings, ScopeTree parent ), Env new ) 
+	= scope( current + new, siblings, parent );
+
+Refs resolve( Statement* stats, ScopeTree scTree, Declare declare ) {
 	refs = {};
-	siblings = getSiblingEnvs( stats );
-	return ( {} | it + resolve( s, scTree, siblings, lookup ) | s <- stats );
+	siblings = ( () | it + createSiblingEnv(s) | Statement s <- stats );
+	
+	for( s <- stats ) {
+		println(s);
+		scTree = addEnv( scTree, matchDeclaration( s ) );
+		iprintln(scTree);
+		//siblings += createSiblingEnv( s );
+		refs += resolve( s, scTree, siblings, declare );
+	}
+	
+	return refs;	
 }
 
-Refs resolve(Statement stat, ScopeTree scTree, map[Statement,Env] siblings, Lookup lookup ) {
+Refs resolve(Statement stat, ScopeTree scTree, SiblingScopes siblings, Declare declare ) {
   Refs refs = {};
   top-down-break visit (stat) {
   	case Function f: 
-  		refs += resolve(f, lookup);
+  		refs += resolve(f, scTree, declare);
     
-    case (Statement)`for( <LetOrConst _> <Id x> in <Expression e> ) <Statement s>` : {
-    	if( (Statement)`{ <Statement* body> }` := s ) {
-	    	Env env = letConstDefs( body );
-	    	refs += resolve(body, scope( env + ("<x>":x@\loc), siblings - env, scTree ), lookup );
-	    } else {
-	    	Env env = letConstDefs( s );
-	    	refs += resolve( s, scope( env + ("<x>":x@\loc), siblings, scTree ), [], lookup );
-	    }
+    case s:(Statement)`let <{VariableDeclaration ","}+ vds>;` : {
+    	for( vd <- vds ) declare( s@\loc, "<vd.id>", vd.id@\loc, scTree );
     }
     
-    case (Statement)`for( <LetOrConst _> <{VariableDeclarationNoIn ","}+ vds> ; <{Expression ","}* conds> ; <{Expression ","}* ops> ) <Statement s>`: {
-    	Env env = letConstDefs( s );
-    	for( vd <- vds ) {
-    		;
-    	}
-    	if( (Statement)`{ <Statement* body> }` := s ) {
-    		;
-    	} else {
-    		;
-    	}
+    case s:(Statement)`const <{VariableDeclaration ","}+ vds>;` : {
+    	for( vd <- vds ) declare( s@\loc, "<vd.id>", vd.id@\loc, scTree );
     }
-    
+    	
     case s:(Statement)`{<Statement* stats>}`: {
-      Env env = siblings[s];
-      refs += resolve(stats, scope( env, siblings<1> - env, scTree ), lookup);
+      Env env = siblings[s@\loc];
+      refs += resolve(stats, scope( env, siblings<1> - env, scTree ), declare );
     }
+    
     case Expression e:
-      refs += resolve(e, scTree, lookup);  
-    case (Statement)`try {<Statement* t>} catch (<Id e>) {<Statement* c>}`: {
-      Env tEnv = letConstDefs(t);
-      Env cEnv = letConstDefs(c);
-      tresolve = resolve(t, scope( siblings[t], siblings<1> - tEnv, scTree), lookup);
-      cresolve = resolve(c, scope( siblings[c], siblings<1> - cEnv, scTree), lookup);
-      refs += tresolve + cresolve;
-    }
+      refs += resolve(e, scTree );  
+    
    }
    return refs;
 }
 
-Refs resolve(Expression exp, ScopeTree scTree, Lookup lookup) {
+Refs resolve(Expression exp, ScopeTree scTree) {
   Refs refs = {};
+  
   top-down-break visit (exp) {
     case Function f: 
-    	refs += resolve(f, lookup);
+    	refs += resolve(f);
+    case (Expression)`<Id x> = <Expression e>` : {
+    	name = "<x>";
+    	use = x@\loc;
+    	refs += { <use, def, name, just(e@\loc)> | loc def <- lookupAssignment(name,use,scTree) };
+    	refs += { <use, def, name, nothing()> | loc def <- lookup(name,use,scTree) };
+    }
     case Id x: {
       name = "<x>";
       use = x@\loc;
-      refs += { <use, def, name, valid> | <loc def,bool valid> <- lookup(name,use,scTree) };
+      refs += { <use, def, name, nothing()> | loc def <- lookup(name,use,scTree) };
     }
   }
   return refs;
 }
 
-map[Statement,Env] getSiblingEnvs( Statement* stats ) {
-	res = ();
-	top-down-break visit( stats ) {
-		case Function f: ;
-		case s:(Statement)`{ <Statement* block> }` :
-			res[s]  = letConstDefs( block );
-		case s:(Statement)`try {<Statement* t>} catch (<Id e>) {<Statement* c>}`: {
-      		res[t] = letConstDefs(t);
-      		res[c] = letConstDefs(c);
-      	}
-      	case s:(Statement)`for( <LetOrConst _> <Id x> in arr ) <Statement s>`:
-      		res[s] = letConstDefs( s ) + ("<x>":x@\loc);
-      	case s:(Statement)`for( <LetOrConst _> <{VariableDeclarationNoIn ","}+ vds>; <{Expression ","}* conds> ; <{Expression ","}* ops> ) <Statement s>`:
-      		res[s] = letConstDefs( s ) + ( "<vd.id>":vd.id@\loc | vd <- vds );
-	}	
-	return res;
-}
+default SiblingScopes createSiblingEnv( Statement s ) = ();
+SiblingScopes createSiblingEnv( s:(Statement)`{ <Statement* block> }` ) 
+	= ( s@\loc : c )
+	when Env c := ( () | it + matchDeclaration(s) | Statement s <- block );
 
-Env letConstDefs(Statement s)
-	= letConstDefs(sStar)
-	when (Statement)`{<Statement* sStar>}` := (Statement)`{<Statement s>}`;
-	
-Env letConstDefs(Statement* body) {
-  env = (); 
-  
-  void define(Id x) {  env["<x>"] = x@\loc;  }
-  
-  top-down-break visit (body) {
-    case (Statement)`{ <Statement* _> }`: ;
-    case Function f: ;
-      
-    case (VarDecl)`let <{VariableDeclaration ","}+ vds>;`:
-      for (vd <- vds) define(vd.id);
-    case (VarDecl)`const <{VariableDeclaration ","}+ vds>;`:
-    	for(vd <- vds) define(vd.id);
-
-    // todo: labels
-  }
-  
-  return env;
-}
+default Env matchDeclaration( Statement s ) = ();
+Env matchDeclaration( (Statement)`let <{VariableDeclaration ","}+ vds>;` )
+	= ( "<vd.id>" : <LET,vd.id@\loc> | vd <- vds );
+Env matchDeclaration( (Statement)`const <{VariableDeclaration ","}+ vds>;` )
+	= ( "<vd.id>" : <CONST,vd.id@\loc> | vd <- vds );
+Env matchDeclaration( (Statement)`var <{VariableDeclaration ","}+ vds>;` )
+	= ( "<vd.id>" : <VAR,vd.id@\loc> | vd <- vds );

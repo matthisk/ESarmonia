@@ -3,3 +3,10 @@ function() {
 	_this;
 	return _this => { _this; this; };
 }
+
+function() {
+	var f = (_this) => {
+		_this = false;
+		this;
+	};
+}

@@ -2,6 +2,7 @@
 
 var myFunc = _this => _this + (_this => this);
 
+var str = `aap ${ noot }`;
 
 // Expression bodies
 var odds = evens.map(v => v + 1);
@@ -119,6 +120,7 @@ f(...[1,2,3]) == 6;
 /*
  * <<<=== For of ====>>>
  */
+
 let fibonacci = {
   [Symbol.iterator]() {
     let pre = 0, cur = 1;
