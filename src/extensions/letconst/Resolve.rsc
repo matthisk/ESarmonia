@@ -1,3 +1,4 @@
+@cachedParser{extensions.letconst.cached.Parser}
 module extensions::letconst::Resolve
 
 import ParseTree;
@@ -13,16 +14,20 @@ alias Def = tuple[loc def,bool valid];
 
 data ScopeTree
 	= scope( Env )
-	| scope( Env current, list[Env] siblings, ScopeTree parent )
+	| scope( Env current, set[Env] siblings, ScopeTree parent )
 	;
-//scope( [{}{}{}], scope( [{}{}], scope( env ) ) )
-//scope( {}, [{}{}], scope( {}, [{}{}{}], scope( env ) ) )
 
-start[Source] debug( str src ) {
-	pt = parse( #start[Source], src );
+start[Source] debug( loc l ) {
+	pt = parse( #start[Source], l );
 	<lookup,getRenaming> = makeResolver();
 	refs = resolve( pt.top, lookup );
 	ren = getRenaming(refs);
+	
+	println("REFERENCES");
+	iprintln(refs);
+	
+	println("TO RENAME:");
+	iprintln(ren);
 	
 	return rename(pt,ren); 
 }
@@ -46,9 +51,10 @@ tuple[Lookup, GetRenaming] makeResolver() {
 		return {<def,!found>};
 	}
 	
-	
+	println("Lookup for <name> at <use>");
+	iprintln(scTree);
 	top-down visit(scTree) {
-		case scope( Env sc, list[Env] siblings, ScopeTree parent ) : {
+		case scope( Env sc, set[Env] siblings, ScopeTree parent ) : {
 		    if( name in sc ) {
 		    	refs += make( sc[name], name, found );
 		 		found = true;
@@ -103,9 +109,6 @@ Refs resolve(Function f, Lookup lookup)
 	= resolve( f.body, scope( letConstDefs(f.body) ), lookup );  
 
 Refs resolve( Statement* stats, ScopeTree scTree, Lookup lookup ) {
-	println("block: <stats>");
-	iprintln(scTree);
-	
 	refs = {};
 	siblings = getSiblingEnvs( stats );
 	return ( {} | it + resolve( s, scTree, siblings, lookup ) | s <- stats );
@@ -141,15 +144,15 @@ Refs resolve(Statement stat, ScopeTree scTree, map[Statement,Env] siblings, Look
     
     case s:(Statement)`{<Statement* stats>}`: {
       Env env = siblings[s];
-      refs += resolve(stats, scope( env, siblings - env, scTree ), lookup);
+      refs += resolve(stats, scope( env, siblings<1> - env, scTree ), lookup);
     }
     case Expression e:
       refs += resolve(e, scTree, lookup);  
     case (Statement)`try {<Statement* t>} catch (<Id e>) {<Statement* c>}`: {
       Env tEnv = letConstDefs(t);
       Env cEnv = letConstDefs(c);
-      tresolve = resolve(t, scope( siblings[t], siblings - tEnv, scTree), lookup);
-      cresolve = resolve(c, scope( siblings[c], siblings - cEnv, scTree), lookup);
+      tresolve = resolve(t, scope( siblings[t], siblings<1> - tEnv, scTree), lookup);
+      cresolve = resolve(c, scope( siblings[c], siblings<1> - cEnv, scTree), lookup);
       refs += tresolve + cresolve;
     }
    }
