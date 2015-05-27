@@ -9,11 +9,10 @@ import extensions::letconst::Syntax;
 alias Env = map[str name,tuple[int declarator,loc at] decl];
 alias SiblingScopes = map[loc, Env];
 
-alias Refs = rel[loc use, loc def, str name, Maybe[loc] redecl];
+alias Refs = rel[loc use, loc def, str name];
 
 alias Declare = void(loc, str, loc, ScopeTree);
 alias GetRenaming = map[loc,str](Refs refs);
-alias GetErrors = map[loc,Statement]();
 
 alias Def = tuple[loc def,bool valid];
 
@@ -28,34 +27,22 @@ int CONST = 1;
 int VAR = 2;
 
 start[Source] resolve( start[Source] pt ) {
-	<declare, getRenaming, getErrors> = makeResolver();
+	<declare, getRenaming> = makeResolver();
 	refs = resolve( pt.top, declare );
 	ren = getRenaming(refs);
-	errors = ();
 	
-	for( <use,def,name,just(loc e)> <- refs ) {
-		errors[e] = (Expression)`console.error("re-assignment of const forbidden")`;
-	}
-	
-	statErrors = getErrors();
-	iprintln(statErrors);
-	return rename(pt,ren,errors,statErrors); 
+	return rename(pt,ren); 
 }
 
-start[Source] rename(start[Source] src, map[loc, str] renaming, map[loc, Expression] errors,map[loc, Statement] statErrors) {
+start[Source] rename(start[Source] src, map[loc, str] renaming) {
   return visit (src) {
-  	case Statement s => statErrors[s@\loc]
-  		when s@\loc in statErrors
-  	case Expression e => errors[e@\loc]
-  		when e@\loc in errors
     case Id x => parse(#Id, renaming[x@\loc])
       when x@\loc in renaming
   }
 }
 
-tuple[Declare, GetRenaming, GetErrors] makeResolver() {
+tuple[Declare, GetRenaming] makeResolver() {
   map[loc, str] toRename = ();
-  map[loc, Statement] toError = ();
   
   void declare( loc stat, str name, loc def, ScopeTree scTree ) {	
   	top-down visit(scTree) {
@@ -66,8 +53,7 @@ tuple[Declare, GetRenaming, GetErrors] makeResolver() {
   		
   		case scope( Env sc, set[Env] siblings, ScopeTree parent ) : {
   			if( name in sc && sc[name].at != def ) {
-  				if(sc[name].declarator == CONST) toError[stat] = (Statement)`throw new ReferenceError("Redeclaration of const");`;
-  				else toRename[def] = name;
+  				toRename[def] = name;
   			}
   			
   			for( env <- siblings, name in env ) {
@@ -76,8 +62,7 @@ tuple[Declare, GetRenaming, GetErrors] makeResolver() {
   		}
   		case scope( Env rt ) : {
   			if(name in rt && rt[name].at != def) {
-  				if(sc[name].declarator == CONST) toError[stat] = (Statement)`throw new ReferenceError();`;
-  				else toRename[def] = name;
+  				toRename[def] = name;
   			}
   		}
   	}
@@ -91,16 +76,12 @@ tuple[Declare, GetRenaming, GetErrors] makeResolver() {
     	allNames += {n};
     	
     	ren[d] = n;
-    	ren += ( u : n | <u,def,_,_> <- refs, def == d );
+    	ren += ( u : n | <u,def,_> <- refs, def == d );
     }
     return ren;
   }
-  
-  map[loc,Statement] getErrors() {
-  	return toError;
-  }
-  
-  return <declare, getRenaming, getErrors>;
+ 
+  return <declare, getRenaming>;
 }
 
 set[loc] lookup(str name, loc use, ScopeTree scTree) {
@@ -108,19 +89,6 @@ set[loc] lookup(str name, loc use, ScopeTree scTree) {
 	    case ScopeTree s : {
 	    	if(name in s.current) return {s.current[name].at};
 	    }
-	}
-	
-	return {};
-}
-
-set[loc] lookupAssignment(str name, loc use, ScopeTree scTree) {
-	top-down visit(scTree) {
-		case ScopeTree s : {
-			if(name in s.current && s.current[name].declarator == CONST)
-				return {s.current[name].at};
-			if(name in s.current)
-				return {};
-		}
 	}
 	
 	return {};
@@ -151,10 +119,7 @@ Refs resolve( Statement* stats, ScopeTree scTree, Declare declare ) {
 	siblings = ( () | it + createSiblingEnv(s) | Statement s <- stats );
 	
 	for( s <- stats ) {
-		println(s);
-		scTree = addEnv( scTree, matchDeclaration( s ) );
-		iprintln(scTree);
-		//siblings += createSiblingEnv( s );
+		scTree.current += matchDeclaration( s );
 		refs += resolve( s, scTree, siblings, declare );
 	}
 	
@@ -193,16 +158,10 @@ Refs resolve(Expression exp, ScopeTree scTree) {
   top-down-break visit (exp) {
     case Function f: 
     	refs += resolve(f);
-    case (Expression)`<Id x> = <Expression e>` : {
-    	name = "<x>";
-    	use = x@\loc;
-    	refs += { <use, def, name, just(e@\loc)> | loc def <- lookupAssignment(name,use,scTree) };
-    	refs += { <use, def, name, nothing()> | loc def <- lookup(name,use,scTree) };
-    }
     case Id x: {
       name = "<x>";
       use = x@\loc;
-      refs += { <use, def, name, nothing()> | loc def <- lookup(name,use,scTree) };
+      refs += { <use, def, name> | loc def <- lookup(name,use,scTree) };
     }
   }
   return refs;

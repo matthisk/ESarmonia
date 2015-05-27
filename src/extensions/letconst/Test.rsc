@@ -76,6 +76,14 @@ test bool resolving() {
 					   '{ var x = 1; }
 					   ",[
 			<"{ let x_0 = 0; }{ var x = 1; }",bool(pt) { return /(Source)`{ let x_0 = 0; }{ var x = 1; }` := pt; }>		   
+		])),
+		
+		\it("name clash with var declaration", 
+			tryResolve("{ { let x = 0; } }
+					   '{ let x = 1; }
+					   'x;
+					   ",[
+			<"{ { let x_0 = 0; } }{ let x_1 = 1; } x;",bool(pt) { return /(Source)`{ { let x_0 = 0; } }{ let x_1 = 1; } x;` := pt; }>		   
 		]))
 	]);
 }
