@@ -2,19 +2,24 @@
 module extensions::letconst::Resolve
 
 import ParseTree;
+import Message;
 import IO;
 import util::Maybe;
 import extensions::letconst::Syntax;
 
+alias PScope = lrel[str name, loc def];
 alias Env = map[str name,tuple[int declarator,loc at] decl];
 alias SiblingScopes = map[loc, Env];
 
 alias Refs = rel[loc use, loc def, str name];
 
-alias Declare = void(loc, str, loc, ScopeTree);
+alias Declare = void(loc, str, loc, PScope, PScope);
 alias GetRenaming = map[loc,str](Refs refs);
+alias GetMessages = list[Message]();
 
 alias Def = tuple[loc def,bool valid];
+
+alias Scope = list[Env];
 
 data ScopeTree
 	= scope( Env current )
@@ -27,9 +32,10 @@ int CONST = 1;
 int VAR = 2;
 
 start[Source] resolve( start[Source] pt ) {
-	<declare, getRenaming> = makeResolver();
+	<declare, getRenaming, getMessages> = makeResolver();
 	refs = resolve( pt.top, declare );
 	ren = getRenaming(refs);
+	println( getMessages() );
 	
 	return rename(pt,ren); 
 }
@@ -41,31 +47,18 @@ start[Source] rename(start[Source] src, map[loc, str] renaming) {
   }
 }
 
-tuple[Declare, GetRenaming] makeResolver() {
+tuple[Declare, GetRenaming, GetMessages] makeResolver() {
+  list[Message] messages = [];
   map[loc, str] toRename = ();
   
-  void declare( loc stat, str name, loc def, ScopeTree scTree ) {	
-  	top-down visit(scTree) {
-  		// Declaration capture cannot happen outside of functions closure
-  		case closure( Env sc, ScopeTree parent ) : {
-  			return;
-  		}
-  		
-  		case scope( Env sc, set[Env] siblings, ScopeTree parent ) : {
-  			if( name in sc && sc[name].at != def ) {
-  				toRename[def] = name;
-  			}
-  			
-  			for( env <- siblings, name in env ) {
-		    	toRename[def] = name;
-		    }
-  		}
-  		case scope( Env rt ) : {
-  			if(name in rt && rt[name].at != def) {
-  				toRename[def] = name;
-  			}
-  		}
-  	}
+  void declare( loc sloc, str name, loc def, PScope scope, PScope defs ) {	
+  	// Redeclaration in current scope
+	if( name in defs<0> ) messages += error("Duplicate declaration \"<name>\"",sloc);
+	// Redeclaration in nested scope
+	else if( name in (scope + defs)<0> ) {
+		for( <name,d> <- scope ) toRename[d] = name;
+		toRename[def] = name;
+	}
   }
   
   map[loc,str] getRenaming(Refs refs) {
@@ -80,8 +73,12 @@ tuple[Declare, GetRenaming] makeResolver() {
     }
     return ren;
   }
+  
+  list[Message] getMessages() {
+  	return messages;
+  }
  
-  return <declare, getRenaming>;
+  return <declare, getRenaming, getMessages>;
 }
 
 set[loc] lookup(str name, loc use, ScopeTree scTree) {
@@ -105,14 +102,12 @@ str gensym(set[str] ns, str base, int i) {
 }
 
 Refs resolve(src:(Source)`<Statement* stats>`, Declare declare) 
-  = resolve( stats, scope( () ), declare );
-  
-Refs resolve(Function f, ScopeTree scTree, Declare declare )
-	= resolve( f.body, closure( (), scTree ), declare );  
+  = resolve( stats, scope( () ), declare )
+  when PScope defs := letConstDefs( stats, declare, [] ); 
 
-ScopeTree addEnv( scope( Env current ), Env new ) = scope( current + new );
-ScopeTree addEnv( scope( Env current, set[Env] siblings, ScopeTree parent ), Env new ) 
-	= scope( current + new, siblings, parent );
+Refs resolve(Function f, ScopeTree scTree, Declare declare )
+	= resolve( f.body, closure( (), scTree ), declare )
+	when PScope defs := letConstDefs( f.body, declare, [] );
 
 Refs resolve( Statement* stats, ScopeTree scTree, Declare declare ) {
 	refs = {};
@@ -126,19 +121,27 @@ Refs resolve( Statement* stats, ScopeTree scTree, Declare declare ) {
 	return refs;	
 }
 
+PScope letConstDefs( Statement* stats, Declare declare, PScope scope ) {
+	PScope defs = []; // Holds definitions from current block, used to detect redeclaration
+
+	top-down-break visit( stats ) {
+		case Function f: ;
+		case (Statement)`{ <Statement* block> }` : scope += letConstDefs( block, declare, scope + defs );
+		case s:(Statement)`let <{VariableDeclaration ","}+ vds>;`:
+			for( vd <- vds ) {
+				declare( s@\loc, "<vd.id>", vd.id@\loc, scope, defs );
+				defs += <"<vd.id>", vd.id@\loc>;
+			}
+	}
+	
+	return scope + defs;
+}
+
 Refs resolve(Statement stat, ScopeTree scTree, SiblingScopes siblings, Declare declare ) {
   Refs refs = {};
   top-down-break visit (stat) {
   	case Function f: 
   		refs += resolve(f, scTree, declare);
-    
-    case s:(Statement)`let <{VariableDeclaration ","}+ vds>;` : {
-    	for( vd <- vds ) declare( s@\loc, "<vd.id>", vd.id@\loc, scTree );
-    }
-    
-    case s:(Statement)`const <{VariableDeclaration ","}+ vds>;` : {
-    	for( vd <- vds ) declare( s@\loc, "<vd.id>", vd.id@\loc, scTree );
-    }
     	
     case s:(Statement)`{<Statement* stats>}`: {
       Env env = siblings[s@\loc];
