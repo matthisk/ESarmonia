@@ -21,7 +21,7 @@ start[Source] runtimeVisitor( pt:(start[Source])`<Statement* src>` ) {
 	}
 	
 	Statement* rt = makeRuntime(runtime);
-    return (start[Source])`<Statement* rt> <Statement* src>`;
+    return pt.top = (Source)`<Statement* rt> <Statement* src>`;
 }
 
 Statement* makeRuntime( set[Statement] runtime ) {

@@ -33,7 +33,9 @@ void() makeRegistrar(str lang, str ext) {
 					<js, xref, renaming> = desugarAndResolve(s);
 					s = addHoverDocs(s, renaming);
 					xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
-          			return s[@hyperlinks=xref2];
+          			s = s[@hyperlinks=xref2];
+          			if( js@messages? ) s = s[@messages = js@messages];
+          			return s;
         		}
         		return pt[@messages={error("BUG: not JS", pt@\loc)}];
 			}),

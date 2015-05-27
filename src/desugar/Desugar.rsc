@@ -13,7 +13,12 @@ extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
 extend extensions::letconst::Desugar;
 
+import ParseTree;
+import extensions::letconst::Resolve;
+
 start[Source] desugarAll(start[Source] src) {
 	//return desugarVisitor( src );
-	return runtimeVisitor( desugarVisitor( src ) );
+	pt = desugarVisitor( src );
+	pt = resolve( pt );
+	return runtimeVisitor( pt );
 }
