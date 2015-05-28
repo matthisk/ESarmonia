@@ -29,32 +29,62 @@ Refs resolve(Function f, Scope parentScope, Declare declare, Lookup lookup )
 	= resolve( f.body, scope, declare, lookup )
 	when Scope scope := varDefs( f.body, parentScope );
 
-Refs resolve( Statement* stats, Scope parentScope, Declare declare, Lookup lookup, Env startScope = () ) {
-	Scope scope = block( startScope, parentScope );
+Refs resolve( Statement* stats, Scope parentScope, Declare declare, Lookup lookup ) {
+	Scope scope = block( (), parentScope );
 	refs = {};
 	
 	for( s <- stats ) {
-		scope.env += matchDeclaration( s, declare, scope );
+		scope = setScope( scope, s, declare );
 		refs += resolve( s, scope, declare, lookup );
 	}
 	
 	return refs;	
 }
 
+default Scope setScope(Scope scope, _, _) = scope;
+Scope setScope(Scope scope, (Statement)`let <{VariableDeclaration ","}+ vds>;`, Declare declare) {
+	for( vd <- vds ) {
+		declare( vd@\loc, "<vd.id>", vd.id@\loc, scope );
+		scope.env["<vd.id>"] = vd.id@\loc;
+	}
+   	return scope;
+}
+Scope setScope(Scope scope, (Statement)`const <{VariableDeclaration ","}+ vds>;`, Declare declare ) {
+	for( vd <- vds ) {
+		declare( vd@\loc, "<vd.id>", vd.id@\loc, scope );
+		scope.env["<vd.id>"] = vd.id@\loc;
+	}
+	return scope;
+}
+
 Refs resolve(Statement stat, Scope scope, Declare declare, Lookup lookup ) {
   Refs refs = {};
+  
   top-down-break visit (stat) {
   	case Function f: 
   		refs += resolve(f, scope, declare, lookup);
     
     case s:(Statement)`{<Statement* stats>}`:
       	refs += resolve(stats, scope, declare, lookup);
+   	
     
-    case (Statement)`for (let <{VariableDeclarationNoIn ","}+ vds>;<{Expression ","}* _>;<{Expression ","}* _>) { <Statement* stats> }`:
-    	refs += resolve(stats, scope, declare, lookup, startScope = ( "<vd.id>" : vd.id@\loc | vd <- vds ));
+    case (Statement)`for (let <{VariableDeclarationNoIn ","}+ vds>;<{Expression ","}* conds>;<{Expression ","}* ops>) <Statement body>`: {
+    	defs = ( "<vd.id>" : vd.id@\loc | vd <- vds, declare( vd@\loc, "<vd.id>", vd.id@\loc, scope ) );
+    	scope = block( defs, scope );
+
+    	for( cond <- conds ) refs += resolve(cond, scope, declare, lookup);
+    	for( op <- ops ) refs += resolve(op, scope, declare, lookup);
+
+    	refs += resolve(body, scope, declare, lookup );
+    }
       
-    case (Statement)`for (let <Id x> in <Expression _>) { <Statement* stats> }`:
-    	refs += resolve(stats, scope, declare, lookup, startScope = ( "<x>" : x@\loc ) );
+    case (Statement)`for (let <Id x> in <Expression obj>) <Statement body>`: {
+    	declare( x@\loc, "<x>", x@\loc, scope );
+    	scope = block( ( "<x>" : x@\loc ), scope );
+    	
+    	refs += resolve(obj, scope, declare, lookup);
+    	refs += resolve(body, scope, declare, lookup );
+    }
     
     case Expression e:
       	refs += resolve(e, scope, declare, lookup); 
@@ -84,10 +114,11 @@ Scope varDefs(Statement* body,Scope parentScope) {
   
   void define((Declarator)`var`,Id x) { env["<x>"] = x@\loc; cl += <"<x>",x@\loc>; }
   void define((Declarator)`let`,Id x) { cl += <"<x>",x@\loc>; }
+  void define((Declarator)`const`,Id x) { cl += <"<x>",x@\loc>; }
   
   top-down-break visit (body) {
     case Function f: 
-      if (f has name) varDefine(f.name);
+      if (f has name) define((Declarator)`var`,f.name);
     
     case (VarDecl)`<Declarator d> <{VariableDeclaration ","}+ vds>;`:
       for (vd <- vds) define(d,vd.id);
@@ -103,7 +134,3 @@ Scope varDefs(Statement* body,Scope parentScope) {
   
   return closure(env,cl,parentScope);
 }
-
-default Env matchDeclaration( Statement s, Declare _, Scope _ ) = ();
-Env matchDeclaration( s:(Statement)`let <{VariableDeclaration ","}+ vds>;`, Declare declare, Scope scope ) 
-	= ( "<vd.id>" : vd.id@\loc | vd <- vds, declare( s@\loc, "<vd.id>", vd.id@\loc, scope ) );

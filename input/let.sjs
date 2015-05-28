@@ -1,8 +1,8 @@
-let i = 0;
-for( let i in arr ) {
-	i;
-	{
-		let i = 1;
-	}
+const i;
+{
+	const i;
+}
+{
+	const i;
 }
 i;
