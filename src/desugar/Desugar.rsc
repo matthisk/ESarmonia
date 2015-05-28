@@ -1,4 +1,4 @@
-@cachedParser{desugar.cached.Parser}
+
 module desugar::Desugar
 extend desugar::Visitor;
 extend runtime::Visitor;
@@ -21,4 +21,10 @@ start[Source] desugarAll(start[Source] src) {
 	pt = desugarVisitor( src );
 	pt = resolve( pt );
 	return runtimeVisitor( pt );
+}
+
+void compile(str input) {
+	pt = parse(#start[Source], input);
+	dpt = resolve( desugarVisitor( pt ) );
+	print(dpt);
 }

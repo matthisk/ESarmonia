@@ -1,4 +1,4 @@
-@cachedParser{extensions.letconst.cached.Parser}
+
 module extensions::letconst::Resolve
 
 import ParseTree;
@@ -41,19 +41,23 @@ Refs resolve( Statement* stats, Scope parentScope, Declare declare, Lookup looku
 	return refs;	
 }
 
-default Scope setScope(Scope scope, _, _) = scope;
-Scope setScope(Scope scope, (Statement)`let <{VariableDeclaration ","}+ vds>;`, Declare declare) {
-	for( vd <- vds ) {
-		declare( vd@\loc, "<vd.id>", vd.id@\loc, scope );
-		scope.env["<vd.id>"] = vd.id@\loc;
+Scope setScope(Scope scope, Statement stat, Declare declare) {
+	void define( {VariableDeclaration ","}+ vds ) {
+		for( vd <- vds ) define(vd@\loc,"<vd.id>",vd.id@\loc);
 	}
-   	return scope;
-}
-Scope setScope(Scope scope, (Statement)`const <{VariableDeclaration ","}+ vds>;`, Declare declare ) {
-	for( vd <- vds ) {
-		declare( vd@\loc, "<vd.id>", vd.id@\loc, scope );
-		scope.env["<vd.id>"] = vd.id@\loc;
+	
+	void define(decl,n,def) {
+        declare( decl, n, def, scope );
+        scope.env[n] = def;
 	}
+
+	top-down-break visit( stat ) {
+		case (Statement)`{ <Statement* _> }`: ; 
+		case Function f: if(f has name) define(f@\loc,"<f.name>",f.name@\loc);
+		case (Statement)`let <{VariableDeclaration ","}+ vds>;`: define(vds);
+		case (Statement)`const <{VariableDeclaration ","}+ vds>;`: define(vds);
+	}
+
 	return scope;
 }
 
@@ -66,7 +70,6 @@ Refs resolve(Statement stat, Scope scope, Declare declare, Lookup lookup ) {
     
     case s:(Statement)`{<Statement* stats>}`:
       	refs += resolve(stats, scope, declare, lookup);
-   	
     
     case (Statement)`for (let <{VariableDeclarationNoIn ","}+ vds>;<{Expression ","}* conds>;<{Expression ","}* ops>) <Statement body>`: {
     	defs = ( "<vd.id>" : vd.id@\loc | vd <- vds, declare( vd@\loc, "<vd.id>", vd.id@\loc, scope ) );
@@ -118,7 +121,7 @@ Scope varDefs(Statement* body,Scope parentScope) {
   
   top-down-break visit (body) {
     case Function f: 
-      if (f has name) define((Declarator)`var`,f.name);
+      if (f has name) define((Declarator)`let`,f.name);
     
     case (VarDecl)`<Declarator d> <{VariableDeclaration ","}+ vds>;`:
       for (vd <- vds) define(d,vd.id);

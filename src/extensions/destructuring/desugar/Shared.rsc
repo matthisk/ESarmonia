@@ -1,4 +1,4 @@
-@cachedParser{extensions.destructuring.cached.Parser}
+
 module extensions::destructuring::desugar::Shared
 
 import extensions::destructuring::Syntax;

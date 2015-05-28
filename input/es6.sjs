@@ -105,13 +105,13 @@ function f(x, y=12) {
 }
 f(3) == 15;
 
-function f(x, ...y) {
+function f1(x, ...y) {
   // y is an Array
   return x * y.length;
 }
 f(3, "hello", true) == 6;
 
-function f(x, y, z) {
+function f2(x, y, z) {
   return x + y + z;
 }
 // Pass each elem of array as argument
@@ -139,3 +139,11 @@ for (var n of fibonacci) {
     break;
   console.log(n);
 }
+
+/*
+ * <<<=== Template Strings ===>>>
+ */
+ 
+var template = `this is ${alsdf} a string`;
+
+var string = "aap";

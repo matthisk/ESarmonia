@@ -1,11 +1,11 @@
-@cachedParser{extensions.arrow.cached.Parser}
+
 module extensions::arrow::Desugar
 extend desugar::Base;
 
 extend extensions::arrow::Syntax;
 import IO;
 
-Source desugar( Source src ) = desugarArrows( src, undefined, undefined );
+Source desugar( Source src ) = desugarArrows( src, this, undefined );
 	  
 Function desugar( f:(Function)`function(<Params ps>) {<Statement* body>}` )
 	= f[body = desugarArrows(body, this, arguments)];

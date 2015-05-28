@@ -1,4 +1,4 @@
-@cachedParser{extensions.classes.cached.Parser}
+
 module extensions::classes::Desugar
 extend desugar::Base;
 extend extensions::classes::Syntax;

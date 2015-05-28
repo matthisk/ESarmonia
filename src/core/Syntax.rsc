@@ -203,8 +203,8 @@ syntax MethodDefinition
 syntax Literal
  = "null"
  | Boolean
- | Numeric
- | String
+ | @category="Numeric" Numeric
+ | @category="String" String
  | RegularExpression
  ;
 

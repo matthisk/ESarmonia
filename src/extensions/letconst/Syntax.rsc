@@ -1,4 +1,4 @@
-@cachedParser{extensions.letconst.cached.Parser}
+
 module extensions::letconst::Syntax
 extend core::Syntax;
 

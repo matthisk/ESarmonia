@@ -1,4 +1,4 @@
-@cachedParser{core.cached.Parser}
+
 module desugar::Base
 
 import ParseTree;

@@ -1,4 +1,4 @@
-@cachedParser{extensions.spread.cached.Parser}
+
 module extensions::spread::Desugar
 extend desugar::Base;
 extend extensions::spread::Syntax;

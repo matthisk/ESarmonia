@@ -1,4 +1,4 @@
-@cachedParser{extensions.object.cached.Parser}
+
 module extensions::object::desugar::Shared
 import extensions::object::Syntax;
 

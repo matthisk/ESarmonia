@@ -2,8 +2,8 @@ module extensions::template::Syntax
 extend core::Syntax;
 
 syntax Literal
-	= template: TemplateLiteral template
-	| taggedTemplate: Id tag TemplateLiteral template
+	= @category="TemplateString" template: TemplateLiteral template
+	| @category="TemplateString" taggedTemplate: Id tag TemplateLiteral template
 	;
 
 syntax TemplateLiteral

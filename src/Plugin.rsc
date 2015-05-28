@@ -1,10 +1,10 @@
-@cachedParser{desugar.cached.Parser}
 module Plugin
 
 import IO;
 import ParseTree;
 import util::IDE;
 import Message;
+import vis::Figure;
 
 import core::resolve::Resolve;
 import core::resolve::Util;
@@ -28,7 +28,7 @@ void() makeRegistrar(str lang, str ext) {
 		});
 		
 		registerContributions(lang, {
-			annotator(Tree(Tree pt) {
+			/*annotator(Tree(Tree pt) {
 				if(start[Source] s := pt) {
 					<js, xref, renaming> = desugarAndResolve(s);
 					s = addHoverDocs(s, renaming);
@@ -38,14 +38,19 @@ void() makeRegistrar(str lang, str ext) {
           			return s;
         		}
         		return pt[@messages={error("BUG: not JS", pt@\loc)}];
-			}),
+			}),*/
 			
 			builder(set[Message](Tree tree) {
 				fixed = rename(js, renaming);
 				out = tree@\loc.top[extension="js"];
 				writeFile(out, unparse(fixed));
 				return  {};
-			})
+			}),
+			
+			categories(
+				("TemplateString":{foregroundColor(rgb(255, 85, 0)), backgroundColor(color("white"))},
+				 "String":{foregroundColor(rgb(161,1,0)), backgroundColor(color("white"))})
+			)
 		});
 	};
 }

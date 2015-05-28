@@ -1,8 +1,4 @@
-var i_1 = 0;
-for( var i in arr ) {
-	i;
-	{
-		var i_0 = 1;
-	}
-}
-i_1;
+var x_0 = 1;
+
+var x_0 = 0;
+x_0;
