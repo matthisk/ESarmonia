@@ -8,7 +8,7 @@ extend extensions::classes::Desugar;
 extend extensions::object::Desugar;
 extend extensions::parameters::Desugar;
 extend extensions::spread::Desugar;
-//extend extensions::forof::Desugar;
+extend extensions::forof::Desugar;
 extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
 extend extensions::letconst::Desugar;

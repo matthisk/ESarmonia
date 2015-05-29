@@ -51,14 +51,13 @@ void() makeRegistrar(str lang, str ext) {
 Tree annotate(Tree pt) {
 	if(start[Source] s := pt) {
 		<js, xref, renaming> = desugarAndResolve(s);
-		println("ANNOTATING");	
 		if( contains("<s.top@\loc>","/compatibility") && s.top@\loc.extension == "sjs" ) {
-			println("Detected compatibility test file");
-			
 			set[Message] messages = {};
 			top-down-break visit(js) {
-				case Function f :
-					if(!testRunFunction(f)) messages += error("Test failed",f@\loc);
+				case Function f : {
+					<success,msg> = testRunFunction(f);
+					if(!success) messages += error("Test failed: <msg>",f@\loc);
+				}
 			}
 			
 			return s[@messages=messages];

@@ -52,7 +52,7 @@ tuple[int,int] run(loc file,str fileName) {
 	return <success,failed>;
 }
 
-bool testRunFunction(Function f)
+tuple[bool,str] testRunFunction(Function f)
 	= runNodeProcess(s,outputFormat=NONE)
 	when
 		Statement s := (Statement)`(<Function f>)();`;
