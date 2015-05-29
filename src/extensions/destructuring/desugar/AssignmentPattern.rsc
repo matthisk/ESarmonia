@@ -1,4 +1,4 @@
-
+@cachedParser{desugar.cached.Parser}
 module extensions::destructuring::desugar::AssignmentPattern
 
 import IO;

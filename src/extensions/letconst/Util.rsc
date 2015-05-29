@@ -21,7 +21,7 @@ data Scope
 	| closure( Env env, LEnv unaccesiblestuff, Scope parent )
 	| root();
 
-start[Source] rename(start[Source] src, map[loc, str] renaming) {
+&T <: Tree rename(&T <: Tree src, map[loc, str] renaming) {
   return visit (src) {
     case Id x => parse(#Id, renaming[x@\loc])
       when x@\loc in renaming

@@ -5,9 +5,12 @@ import ParseTree;
 import util::IDE;
 import Message;
 import vis::Figure;
+import String;
 
 import core::resolve::Resolve;
 import core::resolve::Util;
+
+import \test::Compatibility;
 
 import desugar::Desugar;
 
@@ -28,17 +31,7 @@ void() makeRegistrar(str lang, str ext) {
 		});
 		
 		registerContributions(lang, {
-			/*annotator(Tree(Tree pt) {
-				if(start[Source] s := pt) {
-					<js, xref, renaming> = desugarAndResolve(s);
-					s = addHoverDocs(s, renaming);
-					xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
-          			s = s[@hyperlinks=xref2];
-          			if( js@messages? ) s = s[@messages = js@messages];
-          			return s;
-        		}
-        		return pt[@messages={error("BUG: not JS", pt@\loc)}];
-			}),*/
+			annotator(annotate),
 			
 			builder(set[Message](Tree tree) {
 				fixed = rename(js, renaming);
@@ -53,6 +46,31 @@ void() makeRegistrar(str lang, str ext) {
 			)
 		});
 	};
+}
+
+Tree annotate(Tree pt) {
+	if(start[Source] s := pt) {
+		<js, xref, renaming> = desugarAndResolve(s);
+		println("ANNOTATING");	
+		if( contains("<s.top@\loc>","/compatibility") && s.top@\loc.extension == "sjs" ) {
+			println("Detected compatibility test file");
+			
+			set[Message] messages = {};
+			top-down-break visit(js) {
+				case Function f :
+					if(!testRunFunction(f)) messages += error("Test failed",f@\loc);
+			}
+			
+			return s[@messages=messages];
+		} else {
+			s = addHoverDocs(s, renaming);
+			xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
+  			s = s[@hyperlinks=xref2];
+  			if( js@messages? ) s = s[@messages = js@messages];
+  			return s;
+		}
+	}
+	return pt[@messages={error("BUG: not JS", pt@\loc)}];
 }
 
 start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
@@ -75,11 +93,12 @@ start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
 }
 
 tuple[start[Source], Refs, map[loc, str]] desugarAndResolve(start[Source] src) {
-  js = uniqueify(desugarAll(src));
-  <lookup, getRenaming> = makeResolver();
-  xref = resolve(js.top, lookup);
-  renaming = getRenaming(xref);
-  return <js, xref, renaming>;
+	js = desugarAll(src);
+	js = uniqueify(js);
+	<lookup, getRenaming> = makeResolver();
+	xref = resolve(js.top, lookup);
+	renaming = getRenaming(xref);
+	return <js, xref, renaming>;
 }
 
 start[Source] rename(start[Source] src, map[loc, str] renaming) {

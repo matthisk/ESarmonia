@@ -1,0 +1,3 @@
+[submodule "input/compatibility"]
+	path = input/compatibility
+	url = git@github.com:matthisk/ES6Compatibility.git

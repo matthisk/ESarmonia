@@ -5,7 +5,9 @@ extend desugar::Base;
 extend extensions::arrow::Syntax;
 import IO;
 
-Source desugar( Source src ) = desugarArrows( src, this, undefined );
+Source desugar( Source src ) 
+	= desugarArrows( src, this, undefined )
+	when deepMatchArrow(src);
 	  
 Function desugar( f:(Function)`function(<Params ps>) {<Statement* body>}` )
 	= f[body = desugarArrows(body, this, arguments)];
@@ -38,3 +40,9 @@ private &T <: Tree replaceThisArgumentsReference( &T <: Tree e ) {
 		case (Expression)`<Param p> =\> { <Statement* b> }` => wrap( params(p), replace(b), this, arguments )
 	}
 }
+
+bool deepMatchArrow( Source src ) 
+	= /(Expression)`(<Params ps>) =\> <Expression e>`:=src
+	  || /(Expression)`<Param p> =\> <Expression e>`:=src
+	  || /(Expression)`(<Params ps>) =\> { <Statement* b> }`:=src
+	  || /(Expression)`<Param p> =\> { <Statement* b> }`:=src;
