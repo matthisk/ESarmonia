@@ -1,4 +1,3 @@
-
 module extensions::arrow::Desugar
 extend desugar::Base;
 

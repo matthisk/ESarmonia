@@ -1,4 +1,14 @@
-var x_0 = 1;
+function() {
+	function C() {}
+	let x = 0;
+}
 
-let x = 0;
-x;
+
+function() {
+	function C() {}
+	let x = 1;
+	{
+		function C() {}
+		let x = 2;
+	}
+}

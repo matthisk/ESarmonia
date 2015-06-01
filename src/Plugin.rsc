@@ -31,9 +31,43 @@ void() makeRegistrar(str lang, str ext) {
 		});
 		
 		registerContributions(lang, {
-			annotator(annotate),
+			annotator(Tree(Tree pt) {
+				if(start[Source] s := pt) {
+					<js, xref, renaming> = desugarAndResolve(s);
+					if( isCompatibilityTest(pt@\loc) ) {
+						println("Annotating compatibility test file: <s.top@\loc.file>");
+						int successes = 0; int failures = 0;
+						
+						set[Message] messages = {};
+						top-down-break visit(js) {
+							case Function f : {
+								<success,msg> = testRunFunction(f);
+								if(!success) {
+									messages += error("Test failed: <msg>",f@\loc);
+									failures += 1;
+								} else {
+									successes += 1;
+								}
+							}
+						}
+					
+						println(" rate: <successes>/<failures + successes>");
+						
+						return s[@messages=messages];
+					} else {
+						s = addHoverDocs(s, renaming);
+						xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
+			  			s = s[@hyperlinks=xref2];
+			  			if( js@messages? ) s = s[@messages = js@messages];
+			  			return s;
+					}
+				}
+				return pt[@messages={error("BUG: not JS", pt@\loc)}];
+			}),
 			
 			builder(set[Message](Tree tree) {
+				if( isCompatibilityTest( tree@\loc ) ) return {};
+				
 				fixed = rename(js, renaming);
 				out = tree@\loc.top[extension="js"];
 				writeFile(out, unparse(fixed));
@@ -48,29 +82,7 @@ void() makeRegistrar(str lang, str ext) {
 	};
 }
 
-Tree annotate(Tree pt) {
-	if(start[Source] s := pt) {
-		<js, xref, renaming> = desugarAndResolve(s);
-		if( contains("<s.top@\loc>","/compatibility") && s.top@\loc.extension == "sjs" ) {
-			set[Message] messages = {};
-			top-down-break visit(js) {
-				case Function f : {
-					<success,msg> = testRunFunction(f);
-					if(!success) messages += error("Test failed: <msg>",f@\loc);
-				}
-			}
-			
-			return s[@messages=messages];
-		} else {
-			s = addHoverDocs(s, renaming);
-			xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
-  			s = s[@hyperlinks=xref2];
-  			if( js@messages? ) s = s[@messages = js@messages];
-  			return s;
-		}
-	}
-	return pt[@messages={error("BUG: not JS", pt@\loc)}];
-}
+bool isCompatibilityTest( loc l ) = contains("<l>","/compatibility") && l.extension == "sjs";
 
 start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
   return visit (s) {
@@ -92,7 +104,7 @@ start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
 }
 
 tuple[start[Source], Refs, map[loc, str]] desugarAndResolve(start[Source] src) {
-	js = desugarAll(src);
+	js = desugarAll(src,runtime=false);
 	js = uniqueify(js);
 	<lookup, getRenaming> = makeResolver();
 	xref = resolve(js.top, lookup);

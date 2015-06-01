@@ -40,7 +40,7 @@ public Node setDeclarations( Node e, set[Declaration] decl )
 	= e[@declarations = e@declarations + decl]
 	when e@declarations?;
 
-public Node declareVariables( Node src ) {
+public &T <: Tree declareVariables( &T <: Tree src ) {
 	set[Declaration] variables = {};
 	
 	return visit( src ) {

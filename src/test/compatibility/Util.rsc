@@ -25,5 +25,5 @@ tuple[bool,str] runNodeProcess( &T <: Tree dpt, int outputFormat = FULL ) {
 		result = output == "true";
 	}
 	
-	return <result,output>;
+	return <result,"<output>\n<dpt>">;
 }

@@ -39,10 +39,14 @@ tuple[int,int] run(loc file,str fileName) {
 		return <0,0>;
 	}
 	
-	pt = desugarAll(pt);
+	pt = desugarAll(pt,runtime=false);
 	
 	top-down-break visit(pt) {
-		case Function f: <success,failed> = testRunFunction(f) ? <success+1,failed> : <success,failed+1>;
+		case Function f: {
+			<s,m> = testRunFunction(f);
+			if(s) success += 1;
+			else failed += 1;
+		}
 	}
 	
 	println(" Success: <success>");

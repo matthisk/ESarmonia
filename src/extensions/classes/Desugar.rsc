@@ -1,4 +1,3 @@
-@cachedParser{desugar.cached.Parser}
 module extensions::classes::Desugar
 extend desugar::Base;
 extend extensions::classes::Syntax;
@@ -102,7 +101,7 @@ Id nameParent( (Expression)`<Id extends>` ) = [Id]"_<extends>";
 default Id nameParent( Expression _ ) = [Id]"_ref";
 
 Statement makeClassDeclarationStm( Id name, Expression class )
-	= (Statement)`var <Id name> = <Expression class>;`;
+	= (Statement)`let <Id name> = <Expression class>;`;
 
 Statement* desugarMethods( Id name, Maybe[Id] parent,(Methods)`` ) = stmEmpty();
 Statement* desugarMethods( Id name,Maybe[Id] parent, (Methods)`<Method m><Method* ms>` )

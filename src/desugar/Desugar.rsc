@@ -11,15 +11,17 @@ extend extensions::spread::Desugar;
 extend extensions::forof::Desugar;
 extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
-extend extensions::letconst::Desugar;
 
 import ParseTree;
 import extensions::letconst::Resolve;
 
-start[Source] desugarAll(start[Source] src) {
+start[Source] desugarAll(start[Source] src, bool runtime = true) {
 	pt = desugarVisitor( src );
 	pt = resolve( pt );
-	return runtimeVisitor( pt );
+	
+	if( runtime ) pt = runtimeVisitor(pt);
+	
+	return pt;
 }
 
 void compile(str input) {

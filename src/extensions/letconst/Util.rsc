@@ -30,7 +30,7 @@ data Scope
 
 bool nameInClosure( str name, Scope scope ) {
 	top-down visit( scope ) {
-		case closure( _, LEnv env, _ ) : return name in env<0>;
+		case closure( _, LEnv env, _ ) : return size(env[name]) > 1;
 	}
 	return false;
 }

@@ -1,5 +1,5 @@
 module extensions::classes::Syntax
-extend core::Syntax;
+extend extensions::letconst::Syntax;
 
 syntax Statement
 	= "class" Id name ClassTail
