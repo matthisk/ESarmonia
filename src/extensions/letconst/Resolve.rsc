@@ -8,9 +8,9 @@ import extensions::letconst::Syntax;
 
 import extensions::letconst::Util;
 
-start[Source] resolve( start[Source] pt ) {
+&T <: Tree resolve( &T <: Tree pt ) {
 	<declare, lookup, getRenaming, getMessages> = makeResolver();
-	refs = resolve( pt.top, declare, lookup );
+	refs = resolve( pt, declare, lookup );
 	ren = getRenaming(refs);
 	
 	pt = rename(pt,ren)[@messages = getMessages()]; 
@@ -21,9 +21,12 @@ start[Source] resolve( start[Source] pt ) {
 	return pt;
 }
 
-Refs resolve(src:(Source)`<Statement* stats>`, Declare declare, Lookup lookup) 
+Refs resolve(src:(start[Source])`<Statement* stats>`, Declare declare, Lookup lookup) 
   = resolve( stats, scope, declare, lookup )
   when Scope scope := varDefs( stats, root() );
+
+default Refs resolve( &T <: Tree pt, Declare declare, Lookup lookup )
+	= resolve( pt, root(), declare, lookup );
 
 Refs resolve(Function f, Scope parentScope, Declare declare, Lookup lookup )
 	= resolve( f.body, scope, declare, lookup )

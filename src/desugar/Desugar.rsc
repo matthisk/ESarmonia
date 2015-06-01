@@ -15,7 +15,7 @@ extend extensions::template::Desugar;
 import ParseTree;
 import extensions::letconst::Resolve;
 
-start[Source] desugarAll(start[Source] src, bool runtime = true) {
+&T <: Tree desugarAll(&T <: Tree src, bool runtime = true) {
 	pt = desugarVisitor( src );
 	pt = resolve( pt );
 	

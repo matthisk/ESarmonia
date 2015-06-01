@@ -33,28 +33,10 @@ void() makeRegistrar(str lang, str ext) {
 		registerContributions(lang, {
 			annotator(Tree(Tree pt) {
 				if(start[Source] s := pt) {
-					<js, xref, renaming> = desugarAndResolve(s);
 					if( isCompatibilityTest(pt@\loc) ) {
-						println("Annotating compatibility test file: <s.top@\loc.file>");
-						int successes = 0; int failures = 0;
-						
-						set[Message] messages = {};
-						top-down-break visit(js) {
-							case Function f : {
-								<success,msg> = testRunFunction(f);
-								if(!success) {
-									messages += error("Test failed: <msg>",f@\loc);
-									failures += 1;
-								} else {
-									successes += 1;
-								}
-							}
-						}
-					
-						println(" rate: <successes>/<failures + successes>");
-						
-						return s[@messages=messages];
+						return compatibilityAnnotator(pt);
 					} else {
+						<js, xref, renaming> = desugarAndResolve(s);
 						s = addHoverDocs(s, renaming);
 						xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
 			  			s = s[@hyperlinks=xref2];
@@ -83,6 +65,31 @@ void() makeRegistrar(str lang, str ext) {
 }
 
 bool isCompatibilityTest( loc l ) = contains("<l>","/compatibility") && l.extension == "sjs";
+
+start[Source] compatibilityAnnotator(start[Source] s) {
+	println("Annotating compatibility test file: <s.top@\loc.file>");
+	int successes = 0; int failures = 0;
+	
+	set[Message] messages = {};
+	s = top-down-break visit(s) {
+		case Function f : {
+			fd = desugarAll(f,runtime=false);
+			<success,msg> = testRunFunction(fd);
+			if(!success) {
+				println("<fd>");
+				messages += error("Test failed: <msg>",f@\loc);
+				failures += 1;
+			} else {
+				successes += 1;
+			}
+			insert f[@doc="<fd>"];
+		}
+	}
+
+	println(" rate: <successes>/<failures + successes>");
+	
+	return s[@messages=messages];
+}
 
 start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
   return visit (s) {

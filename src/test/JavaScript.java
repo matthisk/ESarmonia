@@ -22,6 +22,7 @@ public class JavaScript {
 		this.engine = engineManager.getEngineByName("nashorn");
 		
 		this.evalFile( values.string("/ufs/heimense/Thesis/rascal-sweetjs/src/runtime/runtime.js") );
+		this.evalFile( values.string("/ufs/heimense/local/lib/node_modules/core-js/custom.js") );
 	}
 	
 	public IString eval(IString input) {

@@ -1,4 +1,3 @@
-@cachedParser{desugar.cached.Parser}
 module extensions::spread::Desugar
 extend desugar::Base;
 extend extensions::spread::Syntax;
@@ -23,7 +22,9 @@ Expression desugar( (Expression)`[ <{ArgExpression ","}* bef>, ...<Expression ar
 		Expression arr := desugarToConsumableArray( arr ),
 		(Expression)`[<{ArgExpression ","}* desRest>]` := desugarSpread( (Expression)`[<{ArgExpression ","}* rest>]` );
 
-private default Expression desugarToConsumableArray( Expression e ) = e;
+private Expression desugarToConsumableArray( e:(Expression)`[ <{ArgExpression ","}* _> ]` ) = e;
+private Expression desugarToConsumableArray( e:(Expression)`[ <{ArgExpression ","}* _> , ]` ) = e;
+private default Expression desugarToConsumableArray( Expression e ) = setRuntime( (Expression)`_toConsumableArray(<Expression e>)`, _toConsumableArray );
 private Expression desugarToConsumableArray( (Expression)`<Id name>` ) = setRuntime( (Expression)`_toConsumableArray(<Id name>)`, _toConsumableArray );
 private Expression desugarToConsumableArray( (Expression)`<Literal lit>` ) = setRuntime( (Expression)`_toConsumableArray(<Literal lit>)`, _toConsumableArray );
 

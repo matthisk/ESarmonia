@@ -2,8 +2,8 @@ module extensions::template::Syntax
 extend core::Syntax;
 
 syntax Literal
-	= @category="TemplateString" template: TemplateLiteral template
-	| @category="TemplateString" taggedTemplate: Id tag TemplateLiteral template
+	= template: TemplateLiteral template
+	| taggedTemplate: Id tag TemplateLiteral template
 	;
 
 syntax TemplateLiteral
@@ -25,15 +25,15 @@ lexical NoSubstitutionTemplate
 	;
 
 lexical TemplateHead
-	= [`] TemplateChars cs "${"
+	= @category="TemplateString" [`] TemplateChars cs "${"
 	;
 
 lexical TemplateMiddle
-	= "}" TemplateChars cs "${"
+	= @category="TemplateString" "}" TemplateChars cs "${"
 	;
 
 lexical TemplateTail
-	= "}" TemplateChars cs [`]
+	= @category="TemplateString" "}" TemplateChars cs [`]
 	;
 
 lexical TemplateChars = TemplateChar*;

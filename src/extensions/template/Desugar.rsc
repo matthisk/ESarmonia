@@ -1,4 +1,3 @@
-@cachedParser{desugar.cached.Parser}
 module extensions::template::Desugar
 extend desugar::Base;
 extend extensions::template::Syntax;
@@ -19,11 +18,17 @@ Expression toExpression( list[TemplatePart] parts ) {
 	pe = p.e;
 	Expression result = (Expression)`<Expression pe>`;
 	for( TemplatePart p <- parts ) {
-		pe = p.e;
-		result = (Expression)`<Expression result> + <Expression pe>`;
+		result = app( result, p );
 	}
 	return result;
 }
+
+Expression app( Expression result, expr( Expression e ) )
+	= (Expression)`<Expression result> + (<Expression e>)`;
+	
+default Expression app( Expression result, TemplatePart pt )
+	= (Expression)`<Expression result> + <Expression e>`
+	when Expression e := pt.e;
 
 @doc {
  dirty hack to create a concrete syntax js list and list of args from the TemplateParts list, but it works.
