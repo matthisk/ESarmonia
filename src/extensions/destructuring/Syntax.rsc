@@ -15,10 +15,10 @@ syntax ForBinding
 	;
 
 syntax Expression
-	= right( 
+	= right assignBinOr: Expression "|=" Expression
+	> right( 
 	  	  assign: ArrayDestructure!base "=" !>> ([=][=]?) Expression
-		| assign: ObjectDestructure "=" !>> ([=][=]?) Expression 
-	)
+		| assign: ObjectDestructure "=" !>> ([=][=]?) Expression )
 	;
 	
 syntax VariableDeclaration 
