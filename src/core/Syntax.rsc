@@ -150,7 +150,7 @@ syntax Expression
   > left or: Expression "||" Expression
   > cond: Expression!cond "?" Expression!cond ":" Expression
   > right (
-      assign: Expression "=" !>> ([=][=]?) Expression
+      assign: Expression!objectDefinition!array "=" !>> ([=][=]?) Expression
     | assignMul: Expression "*=" Expression
     | assignDiv: Expression "/=" Expression
     | assignRem: Expression "%=" Expression

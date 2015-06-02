@@ -13,8 +13,8 @@ import IO;
  to be desugared by the destructuring extensions
 }
 Statement desugar( (Statement)`for( <Declarator d> <AssignmentPattern pt> in <Expression x> ) <Statement body>` )
-	= (Statement)`for( var _i in <Expression x> ) { <Declarator d> <AssignmentPattern pt> = _i; <Statement body> }`
-	when Statement body := unscope( body );
+	= (Statement)`for( var _i in <Expression x> ) { <Declarator d> <AssignmentPattern pt> = _i; <Statement* body> }`
+	when Statement* body := unscope( body );
 
 Function desugar( (Function)`function <Id funName>( <{Param ","}* bef>, <AssignmentPattern pattern>, <{Param ","}* rest> ) { <Statement* body> }` )
 	= (Function)`function <Id funName>( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { <Statement* desBody> }`
@@ -77,8 +77,7 @@ Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expr
 Source desugar( Source src ) 
 	= desugarExpressionAssignmentPatterns( src )
 	when 
-		   /(Expression)`[<{ArgExpression ","}* _>] = <Expression _>` := src
-		|| /(Expression)`<ArrayDestructure _> = <Expression _>` := src
+		   /(Expression)`<ArrayDestructure _> = <Expression _>` := src
 		|| /(Expression)`<ObjectDestructure _> = <Expression _>` := src;
 
 @doc{
@@ -100,16 +99,6 @@ private Source desugarExpressionAssignmentPatterns( Source src ) {
 	Id ref = [Id]"_ref";
 	
 	return visit( src ) {
-		// Case without rest value
-		case (Expression)`[<{ArgExpression ","}* args>] = <Expression val>`
-			=>
-			setDeclaration( result, ref )
-		when
-			str pattern := "<(Expression)`[<{ArgExpression ","}* args>]`>",
-			AssignmentPattern pattern := [AssignmentPattern]"<pattern>",
-			list[Expression] destructure := destructure( val, ref, 1, pattern ),
-			(Expression) e := convertToCSArray( destructure ),
-			Expression result := (Expression)`<Expression e>.shift()`
 		// Case with rest value
 		case (Expression)`<ArrayDestructure arrPattern> = <Expression val>`
 			=>
@@ -120,7 +109,7 @@ private Source desugarExpressionAssignmentPatterns( Source src ) {
 			(Expression) e := convertToCSArray( destructure ),
 			Expression result := (Expression)`<Expression e>.shift()`
 		// Case with object destructure
-		case (Expression)`<ObjectDestructure pattern> = <Expression val>`
+		case e:(Expression)`<ObjectDestructure pattern> = <Expression val>`
 			=>
 			setDeclaration( result, ref )
 		when
