@@ -55,7 +55,8 @@ test bool desugaringStringTemplates() {
 		)),
 		
 		\it("with tagged template strings", tryDesugar(
-			"tag`aap${A}noot${B}mies`;",
+			"tag`aap${A}no
+			'ot${B}mies`;",
 			[<"tag(_taggedTemplateLiteral([\"aap\",\"noot\",\"mies\"],[\"aap\",\"noot\",\"mies\"]),A,B);",
 			  bool(pt) { return /(Statement)`tag(_taggedTemplateLiteral(["aap","noot","mies"],["aap","noot","mies"]),A,B);` := pt; }>]
 		))
