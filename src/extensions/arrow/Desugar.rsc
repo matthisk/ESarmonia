@@ -9,7 +9,8 @@ Source desugar( Source src )
 	when deepMatchArrow(src);
 	  
 Function desugar( f:(Function)`function(<Params ps>) {<Statement* body>}` )
-	= f[body = desugarArrows(body, this, arguments)];
+	= f[body = desugarArrows(body, this, arguments)]
+	when deepMatchArrow( f.body );
 
 Expression wrap( Params ps, Statement* body, Expression this, Expression arguments )
 	= (Expression)`(function(_this,_arguments) { 
@@ -40,7 +41,7 @@ private &T <: Tree replaceThisArgumentsReference( &T <: Tree e ) {
 	}
 }
 
-bool deepMatchArrow( Source src ) 
+bool deepMatchArrow( &T <: Tree src ) 
 	= /(Expression)`(<Params ps>) =\> <Expression e>`:=src
 	  || /(Expression)`<Param p> =\> <Expression e>`:=src
 	  || /(Expression)`(<Params ps>) =\> { <Statement* b> }`:=src
