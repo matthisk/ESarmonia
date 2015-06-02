@@ -1,4 +1,3 @@
-@cachedParser{desugar.cached.Parser}
 module extensions::destructuring::desugar::Util
 
 import extensions::destructuring::Syntax;
