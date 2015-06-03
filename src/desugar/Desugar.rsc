@@ -1,4 +1,3 @@
-@cachedParser{desugar.cached.Parser}
 module desugar::Desugar
 extend desugar::Visitor;
 extend runtime::Visitor;
@@ -11,6 +10,7 @@ extend extensions::spread::Desugar;
 extend extensions::forof::Desugar;
 extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
+extend extensions::literal::Desugar;
 
 import ParseTree;
 import extensions::letconst::Resolve;
