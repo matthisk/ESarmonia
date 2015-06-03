@@ -12,12 +12,21 @@ public loc compatDir = |project://rascal-sweetjs/input/compatibility|;
 
 void run() {
 	int success = 0; int failed = 0;
-	list[str] tests = listEntries(compatDir);
+	list[str] categories = listEntries(compatDir);
 	
-	for( t <- tests ) {
-		<s,f> = run( compatDir + t, t );
-		success += s;
-		failed += f;
+	for( category <- categories ) {
+		if( category[0] == "." || !(category in ["syntax","bindings","functions"]) ) continue;
+		score = 0;
+		println("Category: <category>");
+		
+		for( t <- listEntries(compatDir + category) ) {
+			<s,f> = run( compatDir + category + t, t );
+			score += s;
+			success += s;
+			failed += f;
+		}
+		
+		println("Score for <category>: <score>");
 	}
 
 	println("==================	
