@@ -89,7 +89,7 @@ syntax ArgExpression
 // Rather than exclude everything other than those cases it would be much easier to whitelist the few that ARE allowed.
 syntax Expression
   = array: "[" {ArgExpression ","}* ","? "]"
-  | objectDefinition:"{" {PropertyAssignment ","}* ","? "}"
+  | objectDefinition:"{" {PropertyAssignment ","}* props ","? "}"
   | this: "this"
   | var: Id 
   | literal: Literal
@@ -197,8 +197,8 @@ syntax PropertyAssignment
   ;
 
 syntax MethodDefinition
-  = "get" PropertyName "(" ")" "{" Statement* "}"
-  | "set" PropertyName "(" Param ")" "{" Statement* "}"
+  = "get" PropertyName "(" ")" "{" Statement* boyd "}"
+  | "set" PropertyName "(" Param p ")" "{" Statement* body "}"
   ;
 
 syntax Literal
