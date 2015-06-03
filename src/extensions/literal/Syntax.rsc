@@ -1,7 +1,6 @@
 module extensions::literal::Syntax
 extend core::Syntax;
 
-
 syntax Numeric
 	= [a-zA-Z$_0-9] !<< OctalInteger
 	| [a-zA-Z$_0-9] !<< BinaryInteger;

@@ -5,13 +5,15 @@ import String;
 import util::Math;
 import IO;
 
-Numeric desugar( Numeric n ) 
-	= [Numeric]"<convertFromBase(2,"<n>"[2..])>"
-	when /BinaryInteger bin := n;
+Expression desugar( (Expression)`<Numeric n>` ) 
+	= (Expression)`<Numeric n>` 
+	when /BinaryInteger bin := n,
+		Numeric n := [Numeric]"<convertFromBase(2,"<n>"[2..])>";
 
-Numeric desugar( Numeric n ) 
-	= [Numeric]"<convertFromBase(8,"<n>"[2..])>"
-	when /OctalInteger oct := n;
+Expression desugar( (Expression)`<Numeric n>` ) 
+	= (Expression)`<Numeric n>`
+	when /OctalInteger oct := n,
+		 Numeric n := [Numeric]"<convertFromBase(8,"<n>"[2..])>";
 
 int convertFromBase( int base, str input ) {
 	int s = 0; 
