@@ -43,11 +43,20 @@ public Node setDeclarations( Node e, set[Declaration] decl )
 public &T <: Tree declareVariables( &T <: Tree src ) {
 	set[Declaration] variables = {};
 	
+	&Y<:Tree addBindings(&Y<:Tree n) { variables += n@declarations; return n; }
+	Statement* insertBindings(Statement* stms) { 
+		stms = declareVariables( stms, variables ); 
+		variables = {}; 
+		return stms; 
+	}
+	
 	return visit( src ) {
-		case &Y <: Tree e : {
-			<variables,e> = getOrSet( e, variables );
-			insert e;	
-		}
+		case Statement* stms => insertBindings(stms)
+			when !isEmpty(variables)
+		case Expression e => addBindings(e)
+			when e@declarations? 
+		case Statement s => addBindings(s)
+			when s@declarations?
 	}
 }
 
