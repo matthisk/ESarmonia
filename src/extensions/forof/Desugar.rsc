@@ -5,12 +5,15 @@ extend extensions::forof::Syntax;
 
 import IO;
 
-Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>` )
-	= setDeclaration( res, decl( [Id]"_arr", (Expression)`[ <{ArgExpression ","}* args> ]` ) )
+Statement desugar( (Statement)`for( <Declarator declarator> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>` )
+	= setDeclaration( res, decl( [Id]"_arr", (Expression)`[<{ArgExpression ","}* args>]` ) )
 	when
 		Statement* body := unscope( body ),
 		VariableDeclaration d := declareBinding( binding, (Expression)`_arr[i]` ),
-		Statement res := (Statement)`for (var i = 0; i \< _arr.length; i++) { <Declarator d> <VariableDeclaration d>; <Statement* body> }`;
+		Statement res := (Statement)`for (var i = 0; i \< _arr.length; i++) { 
+									'	<Declarator declarator> <VariableDeclaration d>; 
+									'	<Statement* body> 
+									'}`;
 
 default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of <Expression exp> ) <Statement body>` )
 	= setDeclarations( res, initialization )
