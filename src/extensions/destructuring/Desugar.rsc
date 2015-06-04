@@ -28,30 +28,6 @@ Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pa
 		Id ref := [Id]"_arg<nameRef( params( rest ) )>",
 		Statement* desBody := desugarBody( pattern, ref, body );
 
-private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, Id ref ) = ref;
-private default Id refName( AssignmentPattern _, Id ref ) = [Id]"<ref>2";
-
-private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, (Expression)`<Id ref>`, _ ) = ref;
-private Id refName( AssignmentPattern _, _, Id ref ) = ref;
-
-private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
-	= concat( result, checkForDefaultFunctionValue( pattern, body ) )
-	when
-		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
-		Statement* result := convertToStatementStar( destructure );
-
-private default Statement* checkForDefaultFunctionValue( AssignmentPattern _, Statement* body )
-	= body;
-private Statement* checkForDefaultFunctionValue( AssignmentPattern pattern, Statement* body )
-	= scope( body )
-	when 
-		   /(Function)`function(<{Param ","}* _>) { <Statement* _> }` := pattern 
-		|| /(Function)`function <Id _>(<{Param ","}* _>) { <Statement* _> }` := pattern;
-
-private default int nameRef( (Params)`` ) = 0;
-private default int nameRef( (Params)`<Param p>,<{Param ","}* ps>` ) = nameRef( params( ps ) );
-private int nameRef( (Params)`<AssignmentPattern _>,<{Param ","}* ps>` ) = 1 + nameRef( params( ps ) );
-
 Statement desugar( (Statement)`var <VariableDeclaration d>;` )
 	= desugarDecl( d )
 	when
@@ -67,19 +43,6 @@ Statement desugar( s:(Statement)`var <VariableDeclaration d>,<{VariableDeclarati
 Statement desugar( (Statement)`var <VariableDeclaration d>;` )
 	= desugarDecl( d );
 	
-default Statement desugarDecl( VariableDeclaration d ) = (Statement)`var <VariableDeclaration d>;`;
-Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>` )
-	= (Statement)`{ <Statement* result> }`
-	when
-		list[Expression] destructure := destructureNoRef( val, refName( pattern, val, [Id]"_ref" ), 1, pattern ),
-		Statement* result := convertToStatementStar( destructure );
-
-Source desugar( Source src ) 
-	= desugarExpressionAssignmentPatterns( src )
-	when 
-		   /(Expression)`<ArrayDestructure _> = <Expression _>` := src
-		|| /(Expression)`<ObjectDestructure _> = <Expression _>` := src;
-
 @doc{
 Because our syntax lacks support for comma expression we can not use this to transform destructuring-
 assignment expressions to ES5 code. Instead I chose to use array which can behave kind of the same.
@@ -95,31 +58,28 @@ the temporary reference itself:
 This solution will in the end be somewhat slower when interpreted by your js engine. This is the result
 of using the shift function.
 }
-private Source desugarExpressionAssignmentPatterns( Source src ) {
-	Id ref = [Id]"_ref";
-	
-	return visit( src ) {
-		// Case with rest value
-		case (Expression)`<ArrayDestructure arrPattern> = <Expression val>`
-			=>
-			setDeclaration( result, ref )
-		when
-			AssignmentPattern pattern := (AssignmentPattern)`<ArrayDestructure arrPattern>`,
-			list[Expression] destructure := destructure( val, ref, 1, pattern ),
-			(Expression) e := convertToCSArray( destructure ),
-			Expression result := (Expression)`<Expression e>.shift()`
-		// Case with object destructure
-		case e:(Expression)`<ObjectDestructure pattern> = <Expression val>`
-			=>
-			setDeclaration( result, ref )
-		when
-			AssignmentPattern pattern := (AssignmentPattern)`<ObjectDestructure pattern>`,
-			list[Expression] destructure := destructure( val, ref, 1, pattern ),
-			Expression e := convertToCSArray( destructure ),
-			Expression result := (Expression)`<Expression e>.shift()`
+Expression desugar( (Expression)`<ArrayDestructure arrPattern> = <Expression val>` )
+	= setDeclaration( result, [Id]"_ref" )
+	when
+		AssignmentPattern pattern := (AssignmentPattern)`<ArrayDestructure arrPattern>`,
+		list[Expression] destructure := destructure( val, [Id]"_ref", 1, pattern ),
+		(Expression) e := convertToCSArray( destructure ),
+		Expression result := (Expression)`<Expression e>.shift()`;
 		
-	}
-}
+Expression desugar( (Expression)`<ObjectDestructure pattern> = <Expression val>` )
+	= setDeclaration( result, [Id]"_ref" )
+	when
+		AssignmentPattern pattern := (AssignmentPattern)`<ObjectDestructure pattern>`,
+		list[Expression] destructure := destructure( val, [Id]"_ref", 1, pattern ),
+		Expression e := convertToCSArray( destructure ),
+		Expression result := (Expression)`<Expression e>.shift()`;
+
+default Statement desugarDecl( VariableDeclaration d ) = (Statement)`var <VariableDeclaration d>;`;
+Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>` )
+	= (Statement)`{ <Statement* result> }`
+	when
+		list[Expression] destructure := destructureNoRef( val, refName( pattern, val, [Id]"_ref" ), 1, pattern ),
+		Statement* result := convertToStatementStar( destructure );
 
 private Expression convertToCSArray( list[Expression] es ) {
 	Expression result = (Expression)`[]`; 
@@ -148,3 +108,27 @@ private Statement* convertToStatementStar( list[Expression] es ) {
 	
 	return result;
 }
+
+private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, Id ref ) = ref;
+private default Id refName( AssignmentPattern _, Id ref ) = [Id]"<ref>2";
+
+private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, (Expression)`<Id ref>`, _ ) = ref;
+private Id refName( AssignmentPattern _, _, Id ref ) = ref;
+
+private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
+	= concat( result, checkForDefaultFunctionValue( pattern, body ) )
+	when
+		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
+		Statement* result := convertToStatementStar( destructure );
+
+private default Statement* checkForDefaultFunctionValue( AssignmentPattern _, Statement* body )
+	= body;
+private Statement* checkForDefaultFunctionValue( AssignmentPattern pattern, Statement* body )
+	= scope( body )
+	when 
+		   /(Function)`function(<{Param ","}* _>) { <Statement* _> }` := pattern 
+		|| /(Function)`function <Id _>(<{Param ","}* _>) { <Statement* _> }` := pattern;
+
+private default int nameRef( (Params)`` ) = 0;
+private default int nameRef( (Params)`<Param p>,<{Param ","}* ps>` ) = nameRef( params( ps ) );
+private int nameRef( (Params)`<AssignmentPattern _>,<{Param ","}* ps>` ) = 1 + nameRef( params( ps ) );
