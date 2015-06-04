@@ -5,17 +5,15 @@ import \test::rascalspec::Util;
 import ParseTree;
 import IO;
 
+import util::ShellExec;
 import \test::JavaScript;
 
 public int FULL = 0;
 public int BASIC = 1;
 public int NONE = 2;
 
-str createIterableObject = "var global = { __createIterableObject : __createIterableObject }; function __createIterableObject(a, b, c) {if (typeof Symbol === \"function\" && Symbol.iterator) {var arr = [a, b, c, ,];var iterable = {next: function() {return { value: arr.shift(), done: arr.length \<= 0 };},}; iterable[Symbol.iterator] = function(){ return iterable; }; return iterable; } else {return eval(\"(function*() { yield a; yield b; yield c; }())\");}}";
-
-tuple[bool,str] runNodeProcess( &T <: Tree dpt, int outputFormat = FULL ) {
+tuple[bool,str] runNashorn( &T <: Tree dpt, int outputFormat = FULL ) {
 	result = false;
-	eval(createIterableObject);
 	output = eval( "<dpt>" );
 	
 	if( outputFormat == FULL ) {
@@ -27,4 +25,25 @@ tuple[bool,str] runNodeProcess( &T <: Tree dpt, int outputFormat = FULL ) {
 	}
 	
 	return <result,"<output>\n<dpt>">;
+}
+
+tuple[bool,str] runNodeProcess( &T <: Tree dpt, int outputFormat = FULL ) = runNodeProcess( "<dpt>", outputFormat=outputFormat );
+tuple[bool,str] runNodeProcess( str dpt, int outputFormat = FULL ) {
+	result = false;
+	runtime = "<readFile(|file:///ufs/heimense/Thesis/rascal-sweetjs/src/runtime/runtime.js|)> <readFile(|project://rascal-sweetjs/src/runtime/runtime.js|)>";
+	
+	nodeP = createProcess( "/home/heimense/local/bin/node", args=["--use_strict","-p","<runtime> <dpt>"] );
+	output = readEntireStream( nodeP );
+	err = readEntireErrStream( nodeP );
+	killProcess( nodeP );
+	
+	if( outputFormat == FULL ) {
+		result = expect( output ).toBe( "true\n" );
+	
+		if( ! result ) { println( 4, "<dpt>" ); }
+	} else if( outputFormat == NONE ) {
+		result = output == "true\n" && err == "";
+	}
+	
+	return <result,"<output>\n<err>\n<dpt>">;
 }
