@@ -18,6 +18,10 @@ anno rel[loc,loc,str] Tree@hyperlinks;
 
 void main() {
 	makeRegistrar( "Sweetr JS", "sjs" )();
+	
+	registerLanguage("JavaScript", "js", Tree(str src,loc l) {
+		return parse( #start[Source], src, l );
+	});
 }
 
 void() makeRegistrar(str lang, str ext) {
