@@ -1,6 +1,21 @@
 module extensions::generators::Desugar
 extend extensions::generators::Syntax;
 
+import extensions::generators::Emitter;
+
+public str fun =
+"function* f() {
+  var pre = 0, cur = 1;
+  for (;;) {
+    var temp = pre;
+    pre = cur;
+    cur += temp;
+   	yield cur;
+  }
+}";
+
+public Function gen = [Function]"<fun>";
+
 Function desugar( f:(Function)`function * <Id name> (<Params ps>) { <Statement* body> }` )
 	= (Function)`function <Id name> (<Params ps>) { 
 				'	<Statement* generator> 
@@ -36,23 +51,36 @@ tuple[list[Id],Statement*] hoist( Statement* body ) {
 	return <vars,body>;
 }
 
-Expression appendExpression( (Expression)`[ <{ArgExpression ","}* args> ]`, Expression e )
-	= (Expression)`[ <{ArgExpression ","}* args>, <Expression e> ]`;
+Statement varDecl( list[Id] vars ) {
+	Statement d = (Statement)`var id;`;
+
+	void app( (Statement)`var <{VariableDeclaration ","}+ vds>;`, Id id ) {
+		d = (Statement)`var <{VariableDeclaration ","}+ vds>, <Id id>;`;
+	}
+
+	for( id <- vars ) app( d, id );
+	
+	return d;
+}
 
 Statement* makeGenerator( Function f ) {
+	<explode,getContextFunction,getTryLocList> = emitter();
+
 	<vars,hBody> = hoist( f.body );
+	list[Statement] outerBody = [];
+	list[Statement] innerBody = [];
 	Id marked = [Id]"marked";
 	Id context = [Id]"context";
 
+	explode(f.body);
+
+	if( size( vars ) > 0 ) outerBody += varDecl( vars );
+	
+	list[Expression] wrapArgs = [
+		getContextFunction(innerFnId),
+		(Expression)`false`,
+		(Expression)`this`
+	];
+	
 	return f.body;	
 }
-
-	//(Statement) `return regeneratorRuntime.wrap(function <Id name>$(<Id context>) {
-	//			'	while(1) switch (<Id context>.prev = <Id context>.next) {
-	//			'		case 0: ;
-	//			'		case 3: ;
-	//			'		case 5: ;
-	//			'		case 'end': 
-	//			'			return <Id context>.stop();
-	//			'	}
-	//			'}, <Id marked>[0], this);`;
