@@ -40,6 +40,16 @@ Statement* statementStar( Statement s )
 	= result
 	when
 		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement s> }`;
+		
+Statement* statementStar( list[Statement] stmts ) {
+	(Statement)`{<Statement* result>}` := (Statement)`{}`;
+	
+	for( Statement s <- stmts ) {
+		result = \append( result, s );
+	}
+	
+	return result;
+}
 
 Statement* \append( Statement* ss, Statement s )
 	= result
