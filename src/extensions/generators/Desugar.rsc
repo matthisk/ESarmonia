@@ -1,7 +1,10 @@
 module extensions::generators::Desugar
+extend desugar::Base;
+
 extend extensions::generators::Syntax;
 
 import extensions::generators::Emitter;
+import IO;
 
 public str fun =
 "function* f() {
@@ -29,20 +32,22 @@ tuple[list[Id],Statement*] hoist( Statement* body ) {
 	body = top-down visit( body ) {
 		case (Statement)`var <{VariableDeclaration ","}+ vds>;` : {
 			list[Expression] assigns = [];
-			Statement* ss := statementStar( (Statement)`;` );	
+			Statement* ss = statementStar( (Statement)`;` );	
 			
 			for( vd <- vds ) {
 				id = vd.id;
 				if( vd.exp? ) exp = vd.exp;
-				vars += vd;
+				vars += vd.id;
 				
-				if( vd.exp? ) 	
-					assigns += (Expression)`<Id id> = <Expression exp>`;	
+				if( vd.exp? ) {
+					Expression exp = vd.exp;
+					assigns += (Expression)`<Id id> = <Expression exp>`;
+				}	
 			}
 		
-			for( ass <- assigns ) \append( ss, (Statement)`<Expression ass>;` );
+			for( ass <- assigns ) ss = \append( ss, (Statement)`<Expression ass>;` );
 			if( size( assigns ) > 0 )
-				insert n;	
+				insert (Statement)`{ <Statement* ss> }`;	
 			else
 				insert (Statement)`;`;
 		}
@@ -64,15 +69,15 @@ Statement varDecl( list[Id] vars ) {
 }
 
 Statement* makeGenerator( Function f ) {
-	<explode,getContextFunction,getTryLocList> = emitter();
-
 	<vars,hBody> = hoist( f.body );
 	list[Statement] outerBody = [];
 	list[Statement] innerBody = [];
 	Id marked = [Id]"marked";
 	Id context = [Id]"context";
-
-	explode(f.body);
+	
+	<explode,getContextFunction,getTryLocList> = emitter(context);
+	
+	explode(hBody);
 
 	if( size( vars ) > 0 ) outerBody += varDecl( vars );
 	

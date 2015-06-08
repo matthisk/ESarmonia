@@ -6,7 +6,9 @@ module extensions::generators::Emitter
 import extensions::generators::Syntax;
 
 import extensions::generators::Marker;
+import extensions::generators::Meta;
 import util::Maybe;
+import List;
 
 map[str,bool] volatileContextPropertyNames = (
 	"prev": true,
@@ -57,11 +59,9 @@ alias Emitter = tuple[
 Emitter emitter( Id contextId ) {
 	list[Statement] tryEntries = [];
 	list[Future[Statement]] listing = [];
-	map[int,Marker] marked = [];
-	Marker finalLoc = \loc();
+	map[int,bool] marked = ();
+	Marker finalLoc = marker(-1);
 	int nextTempId = 0;
-	
-	Marker \loc() { return marker(-1); }
 	
 	int getNextTempId() {
 		nextTempId += 1;
@@ -69,7 +69,7 @@ Emitter emitter( Id contextId ) {
 	}
 	
 	Marker mark( Marker m ) { 
-		index = size( listing );
+		int index = size( listing );
 		if(m.get() == -1)
 			m.update(index);
 		else
@@ -86,12 +86,12 @@ Emitter emitter( Id contextId ) {
 		listing += now((Statement)`<Expression e>;`);
 	}
 
-	void emit( Future[Statement] s ) {
-		listing += s;
+	void emit( Future[Statement] fs ) {
+		listing += fs;
 	}
 	
 	void emit( Future[Expression] future ) {
-		listing += Statement() {
+		listing = listing + Statement() {
 			Expression e = future();
 			return (Statement)`<Expression e>;`;
 		};
@@ -266,16 +266,20 @@ Emitter emitter( Id contextId ) {
 		return just((Expression)`[<{ArgExpression ","}* arr>]`);	
 	}
 
-	void explode( Statement* body ) {
+	void explodeBody( Statement* body ) {
 		for( s <- body ) explode(s);
 	}
 	
-	default void explode( Statement _ ) {
-		throw "unkown statement";
+	default void explode( Statement s ) {
+		throw "unkown statement <s>";
+	}
+	
+	void explode( (Statement)`;` ) {
+		;
 	}
 
-	list[Statement] explode( (Statement)`{ <Statement* ss> }` ) {
-		[ explode(s) | s <- ss ];
+	void explode( (Statement)`{ <Statement* ss> }` ) {
+		for( s <- ss ) explode(s);
 	}
 	
 	void explode( (Statement)`<Expression e>;` ) {
@@ -292,21 +296,19 @@ Emitter emitter( Id contextId ) {
 		Marker update = marker(-1);
 		Marker after = marker(-1);
 		
-		if( size(init) > 0 ) {
-			for( e <- init ) explode(e);
-		}	
+		for( e <- init ) explode(e);
 		
 		mark(head);
 		
-		if( size(conds) > 0 ) {
+		hasConds = false;
+		for( _ <- conds ) hasConds = true;
+		if( hasConds ) {
 			jumpIfNot( explode(conds), after );
 		}
 	
 		mark(update);
 		
-		if( size(ops) > 0 ) {
-			for( e <- ops ) explode(e,true);
-		}	
+		for( e <- ops ) explode(e,true);
 		
 		jump(head);
 		
@@ -334,6 +336,10 @@ Emitter emitter( Id contextId ) {
 			}
 		}
 
+		default Maybe[Expression] explodeExpression( Expression e ) {
+			throw "Unkown Expression <e>";
+		}
+
 		Maybe[Expression] explodeExpression( e:(Expression)`<Expression lhs> = <Expression rhs>` ) {
 			Expression lhs = explode(lhs);
 			Expression rhs = explode(rhs);
@@ -359,8 +365,12 @@ Emitter emitter( Id contextId ) {
 			return just(contextProperty("sent"));
 		}
 		
+		if( ! containsLeap(e) ) {
+			return finish(e);
+		}
+		
 		return explodeExpression( e );	
 	}
 	
-	return <explode,getContextFunction,getTryLocList>;
+	return <explodeBody,getContextFunction,getTryLocList>;
 }
