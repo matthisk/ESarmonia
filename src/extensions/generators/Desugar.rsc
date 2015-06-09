@@ -19,6 +19,10 @@ public str fun =
 
 public Function gen = [Function]"<fun>";
 
+CaseClause* cc() 
+	= cases
+	when (Statement)`switch(c) { <CaseClause* cases> }` := (Statement)`switch(c) { case 0: break;case 1: break; }`;
+
 Function desugar( f:(Function)`function * <Id name> (<Params ps>) { <Statement* body> }` )
 	= (Function)`function <Id name> (<Params ps>) { 
 				'	<Statement* generator> 
@@ -72,6 +76,7 @@ Statement* makeGenerator( Function f ) {
 	<vars,hBody> = hoist( f.body );
 	list[Statement] outerBody = [];
 	list[Statement] innerBody = [];
+	Id innerFnId = [Id]"generator";
 	Id marked = [Id]"marked";
 	Id context = [Id]"context";
 	

@@ -3,12 +3,15 @@
 	https://github.com/facebook/regenerator/blob/master/lib/emit.js
 }
 module extensions::generators::Emitter
+extend desugar::Base;
+
 import extensions::generators::Syntax;
 
 import extensions::generators::Marker;
 import extensions::generators::Meta;
 import util::Maybe;
 import List;
+import IO;
 
 map[str,bool] volatileContextPropertyNames = (
 	"prev": true,
@@ -27,13 +30,10 @@ bool isSwitchCaseEnder( (Statement)`throw;` ) = true;
 bool isSwitchCaseEnder( (Statement)`throw <Expression _>;` ) = true;
 
 CaseClause* toCaseClauses( list[CaseClause] cases ) {
-	Statement swtch = (Statement)`switch(emp) { }`;
+	emp = appl( prod(layouts("LAYOUTLIST"),[conditional(\iter-star(lex("LAYOUT")),{\not-follow(\char-class([range(9,10),range(32,32)])),\not-follow(lit("//")),\not-follow(lit("/*"))})],{}), [appl(regular(\iter-star(lex("LAYOUT"))),[])] );
 	
-	for( CaseClause c <- cases ) {
-		swtch.clauses += c;
-	}        
-        
-    return swtch.cases; 
+	cases = ( [] | it + emp + c | c <- cases )[1..];
+	return appl( regular(\iter-star-seps(sort("CaseClause"),[layouts("LAYOUTLIST")])), cases );
 }
 
 alias Future[&T] = &T();
@@ -79,15 +79,15 @@ Emitter emitter( Id contextId ) {
 	}
 
 	void emit( Statement s ) { 
-		listing += now(s); 
+		listing += [now(s)]; 
 	}
 	
 	void emit( Expression e ) {
-		listing += now((Statement)`<Expression e>;`);
+		listing += [now((Statement)`<Expression e>;`)];
 	}
 
 	void emit( Future[Statement] fs ) {
-		listing += fs;
+		listing += [fs];
 	}
 	
 	void emit( Future[Expression] future ) {
@@ -184,9 +184,9 @@ Emitter emitter( Id contextId ) {
 	}
 	
 	Statement getContextFunction( Id id ) {
-		Statement* dispatchLoop = getDispatchLoop();
+		Statement dispatchLoop = getDispatchLoop();
 		return (Statement)`function <Id id>(<Id contextId>) {
-						   '	<Statement* dispatchLoop>
+						   '	<Statement dispatchLoop>
 						   '}`;
 	}
 	
@@ -203,7 +203,7 @@ Emitter emitter( Id contextId ) {
 		*/	
 		for( Future[Statement] stmt <- listing ) {
 			if( i in marked ) {
-				Literal iLit = [Literal]i;
+				Literal iLit = [Literal]"<i>";
 				Statement* body = statementStar( current );
 				current = [];
 				cases += (CaseClause)`case <Literal iLit> : <Statement* body>`;
@@ -227,8 +227,9 @@ Emitter emitter( Id contextId ) {
 		cases += (CaseClause)`case "end": return <Expression stop>();`;
 		
 		Expression cPrev = contextProperty((Literal)`"prev"`);
-		Expression cNext = contextProeprty((Literal)`"next"`);
+		Expression cNext = contextProperty((Literal)`"next"`);
 		CaseClause* caseClauses = toCaseClauses( cases );
+		
 		return (Statement)
 			`while(1) 
 			'	switch( <Expression cPrev> = <Expression cNext> ) {
