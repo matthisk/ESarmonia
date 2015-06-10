@@ -30,7 +30,9 @@ data Scope
     		 Id fName := [Id]renaming[f@\loc],
     		 Params ps := f.parameters,
     		 Statement* body := f.body,
-    		 Function fNew := (Function)`function (<Params ps>) { <Statement* body> }`
+    		 Function fNew := (Function)`function (<Params ps>) { 
+    		 							'	<Statement* body> 
+    		 							'}`
   }
 }
 

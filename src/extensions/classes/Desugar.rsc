@@ -52,7 +52,10 @@ default Statement ctor2Function( Id name, Maybe[Id] parent, Params ps, Statement
 	when
 		Statement* desugaredBody := desugarSuperConstructorCall( parent, body ),
 		Statement* desugaredBody := desugarSuperReference( [Expression]"constructor", parent, body ),
-		Statement res := (Statement)`function <Id name>(<Params ps>) { _classCallCheck(this,<Id name>); <Statement* desugaredBody> }`;
+		Statement res := (Statement)`function <Id name>(<Params ps>) { 
+									'	_classCallCheck(this,<Id name>); 
+									'	<Statement* desugaredBody> 
+									'}`;
 
 Statement ctor2Function( Id name, just( Id parent ), Params ps, Statement* body )
 	= setRuntime( res, _classCallCheck )
@@ -60,7 +63,12 @@ Statement ctor2Function( Id name, just( Id parent ), Params ps, Statement* body 
 		empty( body ),
 		Statement* desugaredBody := desugarSuperConstructorCall( just(parent), body ),
 		Statement* desugaredBody := desugarSuperReference( [Expression]"constructor", just(parent), body ),
-		Statement res := (Statement)`function <Id name>(<Params ps>) { _classCallCheck(this,<Id name>); if( <Id parent> != null ) { <Id parent>.apply(this,arguments); } }`;
+		Statement res := (Statement)`function <Id name>(<Params ps>) { 
+									'	_classCallCheck(this,<Id name>); 
+									'	if( <Id parent> != null ) { 
+									'		<Id parent>.apply(this,arguments); 
+									'	} 
+									'}`;
 
 Expression desugarClassDeclaration( nothing(), Maybe[Expression] extends, Constructor ctor, Methods ms )
 	= desugarClassDeclaration( just( [Id]"_class" ), extends, ctor, ms ); 
@@ -81,10 +89,23 @@ default Expression makeClassDeclaration( Id name, just( Expression extends ), St
 	= setRuntime( res, _inherits ) 	
 	when
 		Id parent := nameParent(extends),
-		Expression res := (Expression)`(function(<Id parent>) { <Statement ctor> _inherits(<Id name>,<Id parent>); <Statement* methods> <Statement ret> })(<Id extends>)`;
+		Expression res := (Expression)
+									`(function(<Id parent>) { 
+									'	<Statement ctor> 
+									'	
+									'	_inherits(<Id name>,<Id parent>); 
+									'	
+									'	<Statement* methods> 
+									'	
+									'	<Statement ret> 
+									'})(<Id extends>)`;
 
 Expression makeClassDeclaration( _, nothing(), Statement ctor, Statement* methods, Statement ret ) 
-	= (Expression)`(function() { <Statement ctor> <Statement ret> })()`
+	= (Expression)
+				`(function() { 
+				'	<Statement ctor> 
+				'	<Statement ret> 
+				'})()`
 	when
 		empty( methods );
 

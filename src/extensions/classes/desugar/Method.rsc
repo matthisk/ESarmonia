@@ -18,9 +18,20 @@ Statement desugarMethod( Id name, Maybe[Id] parent,(ClassElement)`<PropertyName 
 		Expression lhs := extractLHS( (Expression)`<Id name>.prototype`, methodName );
 
 Statement createFunction( Expression lhs,  Expression key, Maybe[Id] parent, Params ps, Statement* body )
-	= (Statement)`<Expression lhs> = function(<Params ps>) { <Statement* desugaredBody> };`
+	= (Statement)
+				`_createClass(<Expression key>, [{
+				'	key: <Expression methodName>,
+				'	value: function(<Params ps>) {
+				'		<Statement* desugaredBody>
+				'	}
+				'}]);`
 	when
+		Expression methodName := [Expression]"\"<key>\"",
 		Statement* desugaredBody := desugarSuperReference( key, parent, body );
+
+//`<Expression lhs> = function(<Params ps>) { 
+//'	<Statement* desugaredBody> 
+//'};
 
 Statement desugarStaticMethod( Id name, Maybe[Id] parent,(ClassElement)`get <PropertyName methodName>() { <Statement* body> }` )
 	= createGetterSetter( args, parent, stringExp( methodName ), [PropertyName]"get", params( psEmpty() ), body ) 
@@ -46,7 +57,13 @@ Statement createGetterSetter( {ArgExpression ","}* args, Maybe[Id] parent, Expre
 	= setRuntime( result, _createClass )
 	when
 		Statement* desugaredBody := desugarSuperReference( key, parent, body ),
-		Statement result := (Statement)`_createClass( <{ArgExpression ","}* args>, [{ key: <Expression key>, <PropertyName gs>: function(<Params ps>) { <Statement* desugaredBody> } }]);`;
+		Statement result := (Statement)
+									`_createClass( <{ArgExpression ","}* args>, [{ 
+									'	key: <Expression key>, 
+									'	<PropertyName gs>: function(<Params ps>) { 
+									'		<Statement* desugaredBody> 
+									'	} 
+									'}]);`;
 
 Expression stringExp( (PropertyName)`<String s>` ) = (Expression)`<String s>`;
 Expression stringExp( (PropertyName)`<Numeric n>` ) = [Expression]"\"<n>\"";
