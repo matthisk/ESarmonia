@@ -13,10 +13,10 @@ Expression setRuntime( Expression e, Statement rt )
 Statement setRuntime( Statement s, Statement rt )
 	= s[@runtime = rt];
 
-default Statement desugar( Statement s ) = s;
-default Expression desugar( Expression e ) = e;
-default Function desugar( Function f ) = f;
-default Source desugar( Source src ) = src;
+default Statement desugar( Statement s, _ ) = s;
+default Expression desugar( Expression e, _ ) = e;
+default Function desugar( Function f, _ ) = f;
+default Source desugar( Source src, _ ) = src;
 
 public Expression undefined = (Expression)`undefined`;
 public Expression this = (Expression)`this`;
@@ -42,13 +42,13 @@ Statement* statementStar( Statement s )
 		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement s> }`;
 		
 Statement* statementStar( list[Statement] stmts ) {
-	(Statement)`{<Statement* result>}` := (Statement)`{}`;
+	if( (Statement)`{<Statement* result>}` := (Statement)`{}` ) {
+		for( Statement s <- stmts ) {
+			result = \append( result, s );
+		}
 	
-	for( Statement s <- stmts ) {
-		result = \append( result, s );
+		return result;
 	}
-	
-	return result;
 }
 
 Statement* \append( Statement* ss, Statement s )

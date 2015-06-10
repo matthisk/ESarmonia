@@ -11,6 +11,7 @@ extend extensions::forof::Desugar;
 extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
 extend extensions::literal::Desugar;
+//extend extensions::generators::Desugar;
 
 import ParseTree;
 import extensions::letconst::Resolve;
