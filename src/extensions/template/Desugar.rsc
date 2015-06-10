@@ -8,16 +8,42 @@ import IO;
 
 import extensions::template::Runtime;
 
+public str inp1 = "`aap\\nnoot`";
+public str inp2 = "`aap
+				  'noot`";
+
 data TemplatePart
-	= string( str s )
+	= string( TemplateChars cs )
 	| expr( Expression e )
 	;
+
+Expression toStringLiteral( list[DoubleStringChar] cs ) {
+	Expression s = (Expression)`""`;
+	for(c <- cs, (Expression)`"<DoubleStringChar* chars>"` := s) {
+		s = (Expression)`"<DoubleStringChar* chars><DoubleStringChar c>"`;
+	}
+	return s;
+}
+
+Expression toStringRaw( (TemplateChars)`<TemplateChar* cs>` ) 
+	= toStringLiteral( ([] | it + toRawChar(c) | c <- cs) );
+Expression toString( (TemplateChars)`<TemplateChar* cs>` ) 
+	= toStringLiteral( ([] | it + toChar(c) | c <- cs ) );
+
+default DoubleStringChar toRawChar( TemplateChar c ) = [DoubleStringChar]"<c>";
+DoubleStringChar toRawChar( (TemplateChar)`<LineTerminator _>` ) = (DoubleStringChar)`\\n`;
+list[DoubleStringChar] toRawChar( (TemplateChar)`\\<EscapeSequence c>` )
+	= [(DoubleStringChar)`\\\\`,[DoubleStringChar]"<c>"];
+
+default DoubleStringChar toChar( TemplateChar c ) = [DoubleStringChar]"<c>";
+DoubleStringChar toChar( (TemplateChar)`<LineTerminator _>` ) = (DoubleStringChar)`\\n`;
+DoubleStringChar toChar( (TemplateChar)`\\<EscapeSequence c>` ) = (DoubleStringChar)`\\<EscapeSequence c>`;
 
 Expression toExpression( list[TemplatePart] parts ) {
 	Expression result;
 	<p,parts> = pop( parts );	
 
-	void initResult( string(s) ) { result = toStringLiteral( escapeStr( s ) ); }
+	void initResult( string(cs) ) { result = toString(cs); }
 	void initResult( expression(e) ) { result = e; }
 
 	initResult(p);
@@ -32,35 +58,26 @@ Expression toExpression( list[TemplatePart] parts ) {
 Expression app( Expression result, expr( Expression e ) )
 	= (Expression)`<Expression result> + (<Expression e>)`;
 	
-Expression app( Expression result, string( str s ) )
+Expression app( Expression result, string( cs ) )
 	= (Expression)`<Expression result> + <Expression e>`
-	when Expression e := toStringLiteral( escapeStr( s ) );
+	when 
+		Expression e := toString( cs );
 
 @doc {
  dirty hack to create a concrete syntax js list and list of args from the TemplateParts list, but it works.
  Unparsing the stuff to a rascal array which in turn is converted to a str which is then parsed as a js list (or list of args).
 }
-/*tuple[Expression,Expression] extractStrings( list[TemplatePart] parts )
-	= <[Expression]escp,[Expression]escp>
-	when 
-		str escp := "<[ escapeStr(s) | string( str s ) <- parts ]>",
-		str unescp := "<[ s | string(s) <- parts ]>",
-		_ := printlnExp(unescp),
-		_ := [printlnExp(escapeStr(s)) | string(s) <- parts];
-*/
 tuple[Expression,Expression] extractStrings( list[TemplatePart] parts ) {
 	Expression strings = (Expression)`[]`;
 	Expression raw = (Expression)`[]`;
 	
-	for( string(s) <- parts, (Expression)`[<{ArgExpression ","}* strs>]` := strings, 
+	for( string(cs) <- parts, (Expression)`[<{ArgExpression ","}* strs>]` := strings, 
 							 (Expression)`[<{ArgExpression ","}* rws>]` := raw ) {
-		s = escapeStr( s );
-		r = escape( s, ( "\\" : "\\\\" ) );
+		s = toString(cs);
+		r = toStringRaw(cs);
 		
-		es = toStringLiteral( s );
-		er = toStringLiteral( r );
-		strings = (Expression)`[<{ArgExpression ","}* strs>,<Expression es>]`;
-		raw = (Expression)`[<{ArgExpression ","}* rws>,<Expression er>]`;
+		strings = (Expression)`[<{ArgExpression ","}* strs>,<Expression s>]`;
+		raw = (Expression)`[<{ArgExpression ","}* rws>,<Expression r>]`;
 	}
 	
 	return <strings,raw>;
@@ -70,10 +87,10 @@ Expression extractExpressions( list[TemplatePart] parts )
 	= [Expression]s
 	when s := ( "call(" | it + unparse(e) + "," | expr( Expression e ) <- parts )[0..-1] + ")";
 
-Expression desugar( (Expression)`<TemplateLiteral template>` )
+Expression desugar( (Expression)`<TemplateLiteral template>`, _ )
 	= toExpression( desugarTemplateLiteral( template ) );
 	
-Expression desugar( (Expression)`<Id f><TemplateLiteral template>` )
+Expression desugar( (Expression)`<Id f><TemplateLiteral template>`, _ )
 = setRuntime( res, _taggedTemplateLiteral ) 
 	when
 		list[TemplatePart] parts := desugarTemplateLiteral( template ),
@@ -82,43 +99,17 @@ Expression desugar( (Expression)`<Id f><TemplateLiteral template>` )
 		Expression res := (Expression)`<Id f>(_taggedTemplateLiteral(<Expression strings>, <Expression raw>), <{ArgExpression ","}* templateArgs> )`;	
 
 list[TemplatePart] desugarTemplateLiteral( (TemplateLiteral)`\`<TemplateChars cs>\`` )
-	= [string( "<cs>" )];
+	= [string( cs )];
 
 list[TemplatePart] desugarTemplateLiteral( (TemplateLiteral)`<TemplateHead head><Expression e><TemplateSpans spans>` )
-	= [string( desugarLex( head ) ), expr( e ), *desugarSpans( spans )];
+	= [string( head.cs ), expr( e ), *desugarSpans( spans )];
 
 list[TemplatePart] desugarSpans( (TemplateSpans)`}<TemplateChars cs>\`` )
-	= [string( "<cs>" )];
+	= [string( cs )];
 list[TemplatePart] desugarSpans( (TemplateSpans)`<TemplateMiddleList lst><Expression e><TemplateTail tail>` )
-	= [*desugarMiddle( lst ), expr(e), string( desugarLex( tail ) )];
+	= [*desugarMiddle( lst ), expr(e), string( tail.cs )];
 
 list[TemplatePart] desugarMiddle( (TemplateMiddleList)`<TemplateMiddle middle>` )
-	= [string(desugarLex( middle ))];
+	= [string( middle.cs )];
 list[TemplatePart] desugarMiddle( (TemplateMiddleList)`<TemplateMiddle middle><Expression e><{TemplateMiddle Expression}+ rest>` )
-	= [string( desugarLex( middle ) ), expr( e ) ] + desugarMiddle( rest );
-
-str desugarLex( TemplateHead h )
-	= "<h.cs>";
-str desugarLex( TemplateTail t )
-	= "<t.cs>";
-str desugarLex( TemplateMiddle m )
-	= "<m.cs>";
-
-map[str,str] escapes = (
-	"\n" : "\\n",
-	"\t" : "\\t"
-	//"\/" : "\\/",
-	//"\r" : "\\r",
-	//"\b" : "\\b",
-	//"\f" : "\\f",
-	//"\v" : "\\v",
-	//"\0" : "\\0"
-);
-
-str escapeStr( str s ) = escape( s, escapes );
-
-str escapeLineTerminators( str cs )
-	= replaceAll( cs, "\n", "\\n" );
-
-str unescapeLineTerminators( str cs )
-	= replaceAll( cs, "\\n", "\n" );
+	= [string( middle.cs ), expr( e ) ] + desugarMiddle( rest );

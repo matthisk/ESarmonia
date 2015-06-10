@@ -36,7 +36,7 @@ lexical TemplateTail
 	= @category="TemplateString" "}" TemplateChars cs [`]
 	;
 
-lexical TemplateChars = TemplateChar*;
+lexical TemplateChars = TemplateChar* cs;
 
 lexical TemplateChar
 	= [$] !>> [{]
