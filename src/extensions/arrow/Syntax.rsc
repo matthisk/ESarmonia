@@ -6,5 +6,5 @@ syntax Expression
 	| Param "=\>" "{" Statement* "}"
   	|right assignBinOr: Expression "|=" Expression
   	> "(" Params ")" "=\>" Expression
-	| Param "=\>" Expression
+	| arrow: Param "=\>" Expression
 	;

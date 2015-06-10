@@ -30,7 +30,13 @@ default Refs resolve( &T <: Tree pt, Declare declare, Lookup lookup )
 
 Refs resolve(Function f, Scope parentScope, Declare declare, Lookup lookup )
 	= resolve( f.body, scope, declare, lookup )
-	when Scope scope := varDefs( f.body, parentScope );
+	when 
+		Scope scope := addParametersToScope( f, varDefs( f.body, parentScope ) );
+
+Scope addParametersToScope( Function f, Scope scope ) 
+	= scope[env = scope.env + p]
+	when
+		Env p := ( "<x>" : x@\loc | x <- f.parameters.lst);
 
 Refs resolve( Statement* stats, Scope parentScope, Declare declare, Lookup lookup ) {
 	Scope scope = block( (), parentScope );
@@ -56,7 +62,7 @@ Scope setScope(Scope scope, Statement stat, Declare declare) {
 
 	top-down-break visit( stat ) {
 		case (Statement)`{ <Statement* _> }`: ; 
-		case Function f: if(f has name) define(f@\loc,"<f.name>",f.name@\loc);
+		case Function f: if(f has name) define(f@\loc,"<f.name>",f@\loc);
 		case (Statement)`let <{VariableDeclaration ","}+ vds>;`: define(vds);
 		case (Statement)`const <{VariableDeclaration ","}+ vds>;`: define(vds);
 	}
@@ -101,10 +107,13 @@ Refs resolve(Statement stat, Scope scope, Declare declare, Lookup lookup ) {
 
 Refs resolve(Expression exp, Scope scope, Declare declare, Lookup lookup) {
   Refs refs = {};
-  
+ 
   top-down-break visit (exp) {
     case Function f: 
     	refs += resolve(f, scope, declare, lookup);
+    case PropertyName _: ;
+    case ee:(Expression)`<Expression e>.<Id _>` : 
+    	refs += resolve( e, scope, declare, lookup );
     case Id x: {
       name = "<x>";
       use = x@\loc;

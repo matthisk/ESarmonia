@@ -24,7 +24,13 @@ data Scope
 &T <: Tree rename(&T <: Tree src, map[loc, str] renaming) {
   return visit (src) {
     case Id x => parse(#Id, renaming[x@\loc])
-      when x@\loc in renaming
+    	when x@\loc in renaming
+    case (Statement)`<Function f>` => (Statement)`var <Id fName> = <Function fNew>;`
+    	when f@\loc in renaming, 
+    		 Id fName := [Id]renaming[f@\loc],
+    		 Params ps := f.parameters,
+    		 Statement* body := f.body,
+    		 Function fNew := (Function)`function (<Params ps>) { <Statement* body> }`
   }
 }
 
@@ -83,6 +89,7 @@ tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
 		}
 	}
 	
+	messages += error("<name> is not defined",use);	
 	return {};
   }
   
