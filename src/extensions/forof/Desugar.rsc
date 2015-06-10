@@ -5,23 +5,30 @@ extend extensions::forof::Syntax;
 
 import IO;
 
-Statement desugar( (Statement)`for( <Declarator declarator> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>` )
-	= setDeclaration( res, decl( [Id]"_arr", (Expression)`[<{ArgExpression ","}* args>]` ) )
+Statement desugar( (Statement)`for( <Declarator declarator> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>`, Id(str) generateUId )
+	= setDeclaration( res, decl( arr, (Expression)`[<{ArgExpression ","}* args>]` ) )
 	when
+		Id arr := generateUId("_arr"),
 		Statement* body := unscope( body ),
-		VariableDeclaration d := declareBinding( binding, (Expression)`_arr[i]` ),
-		Statement res := (Statement)`for (var i = 0; i \< _arr.length; i++) { 
+		VariableDeclaration d := declareBinding( binding, (Expression)`<Id arr>[i]` ),
+		Statement res := (Statement)`for (var i = 0; i \< <Id arr>.length; i++) { 
 									'	<Declarator declarator> <VariableDeclaration d>; 
 									'	<Statement* body> 
 									'}`;
 
-default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of <Expression exp> ) <Statement body>` )
+default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of <Expression exp> ) <Statement body>`, Id(str) generateUId )
 	= setDeclarations( res, initialization )
 	when
 		Statement loop := iterableLoop( d, binding, exp, body ),
 		(Statement)`{ <Statement* catchBlock> }` := (Statement)`{ _didIteratorError = true; _iteratorError = err; }`,
 		Statement finalBlock := iterableFinal(),
-		Statement res := (Statement)`try { <Statement loop> } catch(err) { <Statement* catchBlock> } finally { <Statement finalBlock> }`;
+		Statement res := (Statement)`try { 
+									'	<Statement loop> 
+									'} catch(err) { 
+									'	<Statement* catchBlock> 
+									'} finally { 
+									'	<Statement finalBlock> 
+									'}`;
 
 Statement iterableLoop( Declarator d, ForBinding binding, Expression arr, Statement body )
 	= res

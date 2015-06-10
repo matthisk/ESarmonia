@@ -10,9 +10,9 @@ import extensions::classes::Runtime;
 import extensions::classes::desugar::Super;
 import extensions::classes::desugar::Method;
 
-Expression desugar( (Expression)`class <ClassTail tail>` )
+Expression desugar( (Expression)`class <ClassTail tail>`, Id(str) generateUId )
 	= desugar( nothing(), tail );
-Expression desugar( (Expression)`class <Id name> <ClassTail tail>` )
+Expression desugar( (Expression)`class <Id name> <ClassTail tail>`, Id(str) generateUId )
 	= desugar( just(name), tail );
 
 Expression desugar( Maybe[Id] name, (ClassTail)`<ClassHeritage heritage> { <Methods ms> }` )
@@ -32,13 +32,13 @@ Expression desugar( Maybe[Id] name, Maybe[Expression] extends, (ClassTail)`{ <Me
 Expression desugar( Maybe[Id] name, Maybe[Expression] extends, (ClassTail)`{ <Constructor ctor> <Methods ms> }` )
 	= desugarClassDeclaration( name, extends, ctor, ms );
 
-Statement desugar( (Statement)`class <Id name> <ClassHeritage heritage> { <Methods ms> }` )
+Statement desugar( (Statement)`class <Id name> <ClassHeritage heritage> { <Methods ms> }`, Id(str) generateUId )
 	= makeClassDeclarationStm( name, class )
 	when
 		Maybe[Expression] extends := extendsQ( heritage ),
 		Expression class := desugarClassDeclaration( just(name), extends, (Constructor)`constructor() {}`, ms );
 
-Statement desugar( (Statement)`class <Id name> <ClassHeritage heritage> { <Constructor ctor> <Methods ms> }` )
+Statement desugar( (Statement)`class <Id name> <ClassHeritage heritage> { <Constructor ctor> <Methods ms> }`, Id(str) generateUId )
 	= makeClassDeclarationStm( name, class )
 	when
 		Maybe[Expression] extends := extendsQ( heritage ),

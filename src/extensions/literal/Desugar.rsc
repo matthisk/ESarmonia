@@ -5,12 +5,12 @@ import String;
 import util::Math;
 import IO;
 
-Expression desugar( (Expression)`<Numeric n>` ) 
+Expression desugar( (Expression)`<Numeric n>`, Id(str) generateUId ) 
 	= (Expression)`<Numeric n>` 
 	when /BinaryInteger bin := n,
 		Numeric n := [Numeric]"<convertFromBase(2,"<n>"[2..])>";
 
-Expression desugar( (Expression)`<Numeric n>` ) 
+Expression desugar( (Expression)`<Numeric n>`, Id(str) generateUId ) 
 	= (Expression)`<Numeric n>`
 	when /OctalInteger oct := n,
 		 Numeric n := [Numeric]"<convertFromBase(8,"<n>"[2..])>";

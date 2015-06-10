@@ -23,7 +23,7 @@ CaseClause* cc()
 	= cases
 	when (Statement)`switch(c) { <CaseClause* cases> }` := (Statement)`switch(c) { case 0: break;case 1: break; }`;
 
-Function desugar( f:(Function)`function * <Id name> (<Params ps>) { <Statement* body> }` )
+Function desugar( f:(Function)`function * <Id name> (<Params ps>) { <Statement* body> }`, Id(str) generateUId )
 	= (Function)`function <Id name> (<Params ps>) { 
 				'	<Statement* generator> 
 				'}`

@@ -11,9 +11,9 @@ import extensions::object::Runtime;
 
 alias Properties = list[PropertyAssignment];
 
-Expression desugar( e:(Expression)`{ <{PropertyAssignment ","}* _>, }` )
+Expression desugar( e:(Expression)`{ <{PropertyAssignment ","}* _>, }`, Id(str) generateUId )
 	= desugarProperties(e);
-Expression desugar( e:(Expression)`{ <{PropertyAssignment ","}* _> }` )
+Expression desugar( e:(Expression)`{ <{PropertyAssignment ","}* _> }`, Id(str) generateUId )
 	= desugarProperties(e);
 
 Expression desugarProperties( Expression object ) {

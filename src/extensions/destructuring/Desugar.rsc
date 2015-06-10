@@ -12,36 +12,45 @@ import IO;
  for in loops can also have destructuring patterns these need to be put in a variable declaration
  to be desugared by the destructuring extensions
 }
-Statement desugar( (Statement)`for( <Declarator d> <AssignmentPattern pt> in <Expression x> ) <Statement body>` )
-	= (Statement)`for( var _i in <Expression x> ) { <Declarator d> <AssignmentPattern pt> = _i; <Statement* body> }`
-	when Statement* body := unscope( body );
-
-Function desugar( (Function)`function <Id funName>( <{Param ","}* bef>, <AssignmentPattern pattern>, <{Param ","}* rest> ) { <Statement* body> }` )
-	= (Function)`function <Id funName>( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { <Statement* desBody> }`
+Statement desugar( (Statement)`for( <Declarator d> <AssignmentPattern pt> in <Expression x> ) <Statement body>`, Id(str) generateUId )
+	= (Statement)`for( var <Id i> in <Expression x> ) { 
+				 '	<Declarator d> <AssignmentPattern pt> = <Id i>; 
+				 '	<Statement* body> 
+				 '}`
 	when
-		Id ref := [Id]"_arg<nameRef( params( rest ) )>",
-		Statement* desBody := desugarBody( pattern, ref, body );
+		Id i := generateUId("_i"), 
+		Statement* body := unscope( body );
 
-Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pattern>, <{Param ","}* rest> ) { <Statement* body> }` )
-	= (Function)`function( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { <Statement* desBody> }`
+Function desugar( (Function)`function <Id funName>( <{Param ","}* bef>, <AssignmentPattern pattern>, <{Param ","}* rest> ) { <Statement* body> }`, Id(str) generateUId )
+	= (Function)`function <Id funName>( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { 
+				'	<Statement* desBody> 
+				'}`
 	when
-		Id ref := [Id]"_arg<nameRef( params( rest ) )>",
-		Statement* desBody := desugarBody( pattern, ref, body );
+		Id ref := generateUId("_arg"),
+		Statement* desBody := desugarBody( pattern, ref, body, generateUId );
 
-Statement desugar( (Statement)`var <VariableDeclaration d>;` )
-	= desugarDecl( d )
+Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pattern>, <{Param ","}* rest> ) { <Statement* body> }`, Id(str) generateUId )
+	= (Function)`function( <{Param ","}* bef>, <Id ref>, <{Param ","}* rest> ) { 
+				'	<Statement* desBody> 
+				'}`
+	when
+		Id ref := generateUId("_arg"),
+		Statement* desBody := desugarBody( pattern, ref, body, generateUId );
+
+Statement desugar( (Statement)`var <VariableDeclaration d>;`, Id(str) generateUId )
+	= desugarDecl( d, generateUId )
 	when
 		/AssignmentPattern _ := d;
-Statement desugar( s:(Statement)`var <VariableDeclaration d>,<{VariableDeclaration ","}+ ds>;` )
+Statement desugar( s:(Statement)`var <VariableDeclaration d>,<{VariableDeclaration ","}+ ds>;`, Id(str) generateUId )
 	= (Statement)`{ <Statement* result> }`
 	when
 		/AssignmentPattern := s,
-		(Statement)`{ <Statement* desD> }` := desugarDecl( d ),
-		(Statement)`{ <Statement* desRest> }` := desugar( (Statement)`var <{VariableDeclaration ","}+ ds>;` ),
+		(Statement)`{ <Statement* desD> }` := desugarDecl( d, generateUId ),
+		(Statement)`{ <Statement* desRest> }` := desugar( (Statement)`var <{VariableDeclaration ","}+ ds>;`, generateUId ),
 		Statement* result := concat( desD, desRest );
 
-Statement desugar( (Statement)`var <VariableDeclaration d>;` )
-	= desugarDecl( d );
+Statement desugar( (Statement)`var <VariableDeclaration d>;`, Id(str) generateUId )
+	= desugarDecl( d, generateUId );
 	
 @doc{
 Because our syntax lacks support for comma expression we can not use this to transform destructuring-
@@ -58,27 +67,30 @@ the temporary reference itself:
 This solution will in the end be somewhat slower when interpreted by your js engine. This is the result
 of using the shift function.
 }
-Expression desugar( (Expression)`<ArrayDestructure arrPattern> = <Expression val>` )
-	= setDeclaration( result, [Id]"_ref" )
+Expression desugar( (Expression)`<ArrayDestructure arrPattern> = <Expression val>`, Id(str) generateUId )
+	= setDeclaration( result, ref )
 	when
+		Id ref := generateUId("_ref"),
 		AssignmentPattern pattern := (AssignmentPattern)`<ArrayDestructure arrPattern>`,
-		list[Expression] destructure := destructure( val, [Id]"_ref", 1, pattern ),
+		list[Expression] destructure := destructure( val, ref, 1, pattern ),
 		(Expression) e := convertToCSArray( destructure ),
 		Expression result := (Expression)`<Expression e>.shift()`;
 		
-Expression desugar( (Expression)`<ObjectDestructure pattern> = <Expression val>` )
-	= setDeclaration( result, [Id]"_ref" )
+Expression desugar( (Expression)`<ObjectDestructure pattern> = <Expression val>`, Id(str) generateUId )
+	= setDeclaration( result, ref )
 	when
+		Id ref := generateUId("_ref"),
 		AssignmentPattern pattern := (AssignmentPattern)`<ObjectDestructure pattern>`,
-		list[Expression] destructure := destructure( val, [Id]"_ref", 1, pattern ),
+		list[Expression] destructure := destructure( val, ref, 1, pattern ),
 		Expression e := convertToCSArray( destructure ),
 		Expression result := (Expression)`<Expression e>.shift()`;
 
-default Statement desugarDecl( VariableDeclaration d ) = (Statement)`var <VariableDeclaration d>;`;
-Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>` )
+default Statement desugarDecl( VariableDeclaration d, Id(str) generateUId ) = (Statement)`var <VariableDeclaration d>;`;
+Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>`, Id(str) generateUId )
 	= (Statement)`{ <Statement* result> }`
 	when
-		list[Expression] destructure := destructureNoRef( val, refName( pattern, val, [Id]"_ref" ), 1, pattern ),
+		Id ref := generateUId("_ref"),
+		list[Expression] destructure := destructureNoRef( val, ref, 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
 
 private Expression convertToCSArray( list[Expression] es ) {
@@ -109,16 +121,11 @@ private Statement* convertToStatementStar( list[Expression] es ) {
 	return result;
 }
 
-private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, Id ref ) = ref;
-private default Id refName( AssignmentPattern _, Id ref ) = [Id]"<ref>2";
-
-private Id refName( (AssignmentPattern)`<ObjectDestructure _>`, (Expression)`<Id ref>`, _ ) = ref;
-private Id refName( AssignmentPattern _, _, Id ref ) = ref;
-
-private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body )
+private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body, Id(str) generateUId )
 	= concat( result, checkForDefaultFunctionValue( pattern, body ) )
 	when
-		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, refName( pattern, ref ), 1, pattern ),
+		Id ref := generateUId("_ref"),
+		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, ref, 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
 
 private default Statement* checkForDefaultFunctionValue( AssignmentPattern _, Statement* body )
@@ -128,7 +135,3 @@ private Statement* checkForDefaultFunctionValue( AssignmentPattern pattern, Stat
 	when 
 		   /(Function)`function(<{Param ","}* _>) { <Statement* _> }` := pattern 
 		|| /(Function)`function <Id _>(<{Param ","}* _>) { <Statement* _> }` := pattern;
-
-private default int nameRef( (Params)`` ) = 0;
-private default int nameRef( (Params)`<Param p>,<{Param ","}* ps>` ) = nameRef( params( ps ) );
-private int nameRef( (Params)`<AssignmentPattern _>,<{Param ","}* ps>` ) = 1 + nameRef( params( ps ) );

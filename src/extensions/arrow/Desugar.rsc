@@ -4,11 +4,11 @@ extend desugar::Base;
 extend extensions::arrow::Syntax;
 import IO;
 
-Source desugar( Source src ) 
+Source desugar( Source src, Id(str) generateUId ) 
 	= desugarArrows( src, this, undefined )
 	when deepMatchArrow(src);
 	  
-Function desugar( f:(Function)`function(<Params ps>) {<Statement* body>}` )
+Function desugar( f:(Function)`function(<Params ps>) {<Statement* body>}`, Id(str) generateUId )
 	= f[body = desugarArrows(body, this, arguments)]
 	when deepMatchArrow( f.body );
 
