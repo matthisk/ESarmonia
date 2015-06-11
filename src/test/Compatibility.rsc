@@ -39,6 +39,7 @@ void run() {
 tuple[int,int] run(loc file,str fileName) {
 	println("Test <fileName>");
 	int success = 0; int failed = 0;
+	throwing = file.file == "const.sjs" || file.file == "let.sjs";
 	start[Source] pt;
 	
 	try {
@@ -48,7 +49,7 @@ tuple[int,int] run(loc file,str fileName) {
 		return <0,0>;
 	}
 	
-	pt = desugarAll(pt,runtime=false);
+	pt = desugarAll(pt,runtime=false,throwReferenceErrors=throwing);
 	
 	top-down-break visit(pt) {
 		case Function f: {
