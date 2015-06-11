@@ -5,6 +5,7 @@ import ParseTree;
 import Message;
 import IO;
 import extensions::letconst::Syntax;
+import extensions::letconst::Globals;
 
 import extensions::letconst::Util;
 
@@ -23,10 +24,10 @@ import extensions::letconst::Util;
 
 Refs resolve(src:(start[Source])`<Statement* stats>`, Declare declare, Lookup lookup) 
   = resolve( stats, scope, declare, lookup )
-  when Scope scope := varDefs( stats, root() );
+  when Scope scope := varDefs( stats, root( globals ) );
 
 default Refs resolve( &T <: Tree pt, Declare declare, Lookup lookup )
-	= resolve( pt, root(), declare, lookup );
+	= resolve( pt, root( globals ), declare, lookup );
 
 Refs resolve(Function f, Scope parentScope, Declare declare, Lookup lookup )
 	= resolve( f.body, scope, declare, lookup )

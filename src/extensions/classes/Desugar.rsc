@@ -78,14 +78,21 @@ Expression desugarClassDeclaration( just( Id name ), Maybe[Expression] extends, 
 	when
 		Maybe[Id] parent := nameParent( extends ),
 		(Constructor)`constructor (<Params ps>) { <Statement* body> }` := ctor,
-		Statement* methods := desugarMethods( name, parent, ms ),
+		Statement methods := desugarMethods( name, parent, ms ),
 		Statement ctorFunction := ctor2Function( name, parent, ps, body ),
 		Statement ret := (Statement)`return <Id name>;`;
 
-default Expression makeClassDeclaration( Id name, extends:nothing(), Statement ctor, Statement* methods, Statement ret )
-	= (Expression)`(function() { <Statement ctor> <Statement* methods> <Statement ret> })()`;
+default Expression makeClassDeclaration( Id name, extends:nothing(), Statement ctor, Statement methods, Statement ret )
+	= (Expression)
+				`(function() { 
+				'	<Statement ctor> 
+				'	
+				'	<Statement methods> 
+				'	
+				'	<Statement ret> 
+				'})()`;
 
-default Expression makeClassDeclaration( Id name, just( Expression extends ), Statement ctor, Statement* methods, Statement ret )
+default Expression makeClassDeclaration( Id name, just( Expression extends ), Statement ctor, Statement methods, Statement ret )
 	= setRuntime( res, _inherits ) 	
 	when
 		Id parent := nameParent(extends),
@@ -95,12 +102,12 @@ default Expression makeClassDeclaration( Id name, just( Expression extends ), St
 									'	
 									'	_inherits(<Id name>,<Id parent>); 
 									'	
-									'	<Statement* methods> 
+									'	<Statement methods> 
 									'	
 									'	<Statement ret> 
 									'})(<Id extends>)`;
 
-Expression makeClassDeclaration( _, nothing(), Statement ctor, Statement* methods, Statement ret ) 
+Expression makeClassDeclaration( _, nothing(), Statement ctor, Statement methods, Statement ret ) 
 	= (Expression)
 				`(function() { 
 				'	<Statement ctor> 
@@ -109,12 +116,19 @@ Expression makeClassDeclaration( _, nothing(), Statement ctor, Statement* method
 	when
 		empty( methods );
 
-Expression makeClassDeclaration( Id name, just( Expression extends ), Statement ctor, Statement* methods, Statement ret ) 
+Expression makeClassDeclaration( Id name, just( Expression extends ), Statement ctor, Statement methods, Statement ret ) 
 	= setRuntime( res, _inherits )	
 	when
 		Id parent := nameParent(extends),
 		(Statement)`{}` := (Statement)`{ <Statement* methods> }`,
-		Expression res := (Expression)`(function(<Id parent>) { <Statement ctor> _inherits(<Id name>,<Id parent>); <Statement ret> })(<Id extends>)`;
+		Expression res := (Expression)
+									`(function(<Id parent>) { 
+									'	<Statement ctor> 
+									'
+									'	_inherits(<Id name>,<Id parent>); 
+									'
+									'	<Statement ret> 
+									'})(<Id extends>)`;
 
 Maybe[Id] nameParent( nothing() ) = nothing();
 Maybe[Id] nameParent( just( Expression extends ) ) = just( nameParent( extends ) );
@@ -124,14 +138,16 @@ default Id nameParent( Expression _ ) = [Id]"_ref";
 Statement makeClassDeclarationStm( Id name, Expression class )
 	= (Statement)`let <Id name> = <Expression class>;`;
 
-Statement* desugarMethods( Id name, Maybe[Id] parent,(Methods)`` ) = stmEmpty();
-Statement* desugarMethods( Id name,Maybe[Id] parent, (Methods)`<Method m><Method* ms>` )
-	= prepend( s, ss )
-	when
-		Statement s := desugarMethod( name,parent, m ),
-		Statement* ss := desugarMethods( name,parent, (Methods)`<Method* ms>` );
+Statement desugarMethods( Id name, Maybe[Id] parent, (Methods)`<Method* ms>` ) {
+	list[Expression] methodObjects = [ desugarMethod( name, parent, c ) | (Method)`<ClassElement c>` <- ms ];
+	list[Expression] staticMethodObjects = [ desugarMethod( name, parent, c ) | (Method)`static <ClassElement c>` <- ms ];
 
-Statement desugarMethod( Id name,Maybe[Id] parent, (Method)`static <ClassElement c>` )
-	= desugarStaticMethod( name, parent, c );
-Statement desugarMethod( Id name,Maybe[Id] parent, (Method)`<ClassElement c>` )
-	= desugarMethod( name, parent, c );
+	if( size(methodObjects) == 0 && size( staticMethodObjects ) == 0 ) return (Statement)`;`;
+	
+	methodsArray = toArray( methodObjects );
+	staticMethodsArray = toArray( staticMethodObjects );
+	
+	result = (Statement)`_createClass(<Id name>, <Expression methodsArray>, <Expression staticMethodsArray>);`;
+	
+	return setRuntime( result, _createClass );
+}

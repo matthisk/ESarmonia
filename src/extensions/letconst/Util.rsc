@@ -19,7 +19,7 @@ alias GetMessages = set[Message]();
 data Scope 
 	= block( Env env, Scope parent )
 	| closure( Env env, LEnv unaccesiblestuff, Scope parent )
-	| root();
+	| root( Env env );
 
 &T <: Tree rename(&T <: Tree src, map[loc, str] renaming) {
   return visit (src) {
@@ -88,6 +88,10 @@ tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
 				for( loc def <- cl[name] ) 
 					toRename[def] = name;
 			if(name in env) return {env[name]};
+		}
+		// Global declarations
+		case root( Env env ) : {
+			if(name in env) return {};
 		}
 	}
 	

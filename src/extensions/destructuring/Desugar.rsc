@@ -124,7 +124,6 @@ private Statement* convertToStatementStar( list[Expression] es ) {
 private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body, Id(str) generateUId )
 	= concat( result, checkForDefaultFunctionValue( pattern, body ) )
 	when
-		Id ref := generateUId("_ref"),
 		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, ref, 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
 

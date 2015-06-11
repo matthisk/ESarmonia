@@ -50,7 +50,14 @@ list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:
 	= destructurePattern( original, name, nesting, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression rest> ]` );
 
 list[Expression] toRemainder( Id original, Id name, int nesting, Expression size, (LHSExpression)`<AssignmentPattern rest>` )
-	= destructure( (Expression)`<Id name>.slice(<Expression size>)`, [Id]"<name>$slice", nesting + 1, rest );
+	= setDecl( r, decl(ref) ) 
+	when
+		Id ref := [Id]"<name>$slice",
+		list[Expression] r := destructure( (Expression)`<Id name>.slice(<Expression size>)`, ref, nesting + 1, rest );
+		
+list[Expression] setDecl( list[Expression] es, d )
+	= [ setDeclaration( e, d ) | e <- es ];
+
 list[Expression] toRemainder( Id _, Id name, int _, Expression size, (LHSExpression)`<Expression rest>` )
 	= [ (Expression)`<Expression rest> = <Id name>.slice(<Expression size>)` ];
 
