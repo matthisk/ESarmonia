@@ -16,8 +16,6 @@ import desugar::Desugar;
 
 anno rel[loc,loc,str] Tree@hyperlinks;
 
-tuple[bool RefErrorThrow] config = <false>;
-
 void main() {
 	makeRegistrar( "Sweetr JS", "sjs" )();
 	
@@ -57,7 +55,6 @@ void() makeRegistrar(str lang, str ext) {
 				if( isCompatibilityTest( tree@\loc ) ) return {};
 				
 				fixed = rename(js, renaming);
-				if(config.RefErrorThrow && js@messages?) fixed = throwErrors(fixed, js@messages);
 				
 				out = tree@\loc.top[extension="js"];
 				writeFile(out, unparse(fixed));
@@ -77,12 +74,13 @@ bool isCompatibilityTest( loc l ) = contains("<l>","/compatibility") && l.extens
 start[Source] compatibilityAnnotator(start[Source] s) {
 	println("Annotating compatibility test file: <s.top@\loc.file>");
 	int successes = 0; int failures = 0;
+
+	throwing = s.top@\loc.file == "const.sjs" || s.top@\loc.file == "let.sjs";
 	
 	set[Message] messages = {};
 	s = top-down-break visit(s) {
 		case Function f : {
-			fd = desugarAll(f,runtime=false);
-			if(fd@messages?) fd = throwErrors(fd,fd@messages);
+			fd = desugarAll(f,runtime=false,throwReferenceErrors=throwing);
 			
 			<success,msg> = testRunFunction(fd);
 			if(!success) {
@@ -134,13 +132,4 @@ start[Source] rename(start[Source] src, map[loc, str] renaming) {
     case Id x => parse(#Id, renaming[x@\loc])
       when x@\loc in renaming
   }
-}
-
-&T <: Tree throwErrors(&T <: Tree src, set[Message] messages ) {
-	errs = ( err.at : err.msg | err:error(_,_) <- messages ); 
-	
-	return visit(src) {
-		case Expression e => (Expression)`(function() { throw ReferenceError(<Expression msg>); })()`
-			when e@\loc in errs, Expression msg := [Expression]"\"<errs[e@\loc]>\""
-	}
 }
