@@ -30,7 +30,8 @@ tuple[bool,str] runNashorn( &T <: Tree dpt, int outputFormat = FULL ) {
 tuple[bool,str] runNodeProcess( &T <: Tree dpt, int outputFormat = FULL ) = runNodeProcess( "<dpt>", outputFormat=outputFormat );
 tuple[bool,str] runNodeProcess( str dpt, int outputFormat = FULL ) {
 	result = false;
-	runtime = "<readFile(|file:///ufs/heimense/Thesis/rascal-sweetjs/src/runtime/runtime.js|)> <readFile(|project://rascal-sweetjs/src/runtime/runtime.js|)>";
+	runtime = "require(\"/ufs/heimense/local/lib/node_modules/core-js/custom.js\");
+			  '<readFile(|project://rascal-sweetjs/src/runtime/runtime.js|)>";
 	
 	nodeP = createProcess( "/home/heimense/local/bin/node", args=["--use_strict","-p","<runtime> <dpt>"] );
 	output = readEntireStream( nodeP );
