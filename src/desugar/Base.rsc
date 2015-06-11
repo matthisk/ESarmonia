@@ -29,6 +29,8 @@ Statement* scope( Statement* body )
 	when
 		Statement f := (Statement)`return (function() { <Statement* body> })();`;
 
+default bool empty( Statement s ) = false;
+bool empty( (Statement)`;` ) = true;
 bool empty( Statement* stms )
 	= (Statement)`{}` := (Statement)`{ <Statement* stms> }`;
 
@@ -59,12 +61,28 @@ Statement* \append( Statement* ss, Statement s )
 Statement* prepend( Statement s, Statement* ss )
 	= result
 	when
-		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement s> <Statement* ss> }`;
+		(Statement)`{ <Statement* result> }` := (Statement)
+														`{ 
+														'<Statement s> 
+														'<Statement* ss> 
+														'}`;
 
 Statement* concat( Statement* strt, Statement* rest )
 	= result
 	when
-		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement* strt> <Statement* rest> }`;  
+		(Statement)`{ <Statement* result> }` := (Statement)
+														`{ 
+														'<Statement* strt> 
+														'<Statement* rest> 
+														'}`;  
+
+Expression toArray( list[Expression] exps ) {
+	Expression arr = (Expression)`[]`;
+	for( e <- exps, (Expression)`[<{ArgExpression ","}* args>]` := arr ) {
+		arr = (Expression)`[<{ArgExpression ","}* args>,<Expression e>]`;
+	}
+	return arr;
+}
 
 Params params( Param p ) = (Params)`<Param p>`;
 Params params( {Param ","}* ps ) = (Params)`<{Param ","}* ps>`;
