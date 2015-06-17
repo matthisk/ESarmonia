@@ -99,7 +99,6 @@ syntax Expression
   | call: Expression "(" { ArgExpression ","}* ")" 
   | member: Expression "[" Expression "]" 
   > new: "new" Expression
-  | newDotTarget: "new" "." "target"
   > postIncr: Expression "++"
   | postDec: Expression "--"
   > delete: "delete" Expression
