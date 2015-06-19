@@ -99,6 +99,14 @@ Refs resolve(Statement stat, Scope scope, Declare declare, Lookup lookup ) {
     	refs += resolve(body, scope, declare, lookup );
     }
     
+    case (Statement)`try { <Statement* tr> } catch(<Id n>) { <Statement* ct> }`: {
+    	declare( n@\loc, "<n>", n@\loc, scope );
+    	
+    	refs += resolve(tr, scope, declare, lookup);
+    	scope = block( ( "<n>": n@\loc ), scope );
+    	refs += resolve(ct, scope, declare, lookup);
+    }
+    
     case Expression e:
       	refs += resolve(e, scope, declare, lookup); 
     
@@ -132,21 +140,29 @@ Scope varDefs(Statement* body,Scope parentScope) {
   void define((Declarator)`let`,Id x) { cl += <"<x>",x@\loc>; }
   void define((Declarator)`const`,Id x) { cl += <"<x>",x@\loc>; }
   
-  top-down-break visit (body) {
-    case Function f: 
-      if (f has name) define((Declarator)`let`,f.name);
-    
-    case (VarDecl)`<Declarator d> <{VariableDeclaration ","}+ vds>;`:
-      for (vd <- vds) define(d,vd.id);
-    
-    case (Statement)`for (<Declarator d> <{VariableDeclarationNoIn ","}+ vds>;<{Expression ","}* _>;<{Expression ","}* _>) <Statement _>`:
-    	for( vd <- vds ) define(d,vd.id);
-      
-    case (Statement)`for (<Declarator d> <Id x> in <Expression _>) <Statement _>`:
-      define(d,x);
+  void definer( &T <: Tree n ) {
+      top-down-break visit (n) {
+        case Function f: 
+          if (f has name) define((Declarator)`let`,f.name);
+        
+        case (VarDecl)`<Declarator d> <{VariableDeclaration ","}+ vds>;`:
+          for (vd <- vds) define(d,vd.id);
+        
+        case (Statement)`for (<Declarator d> <{VariableDeclarationNoIn ","}+ vds>;<{Expression ","}* _>;<{Expression ","}* _>) <Statement s>`: {
+          for( vd <- vds ) define(d,vd.id);
+          definer(s);
+        }
+          
+        case (Statement)`for (<Declarator d> <Id x> in <Expression _>) <Statement s>`: {
+          define(d,x);
+          definer(s);
+        }
 
-    // todo: labels
+        // todo: labels
+      }
   }
+  
+  definer(body);
   
   return closure(env,cl,parentScope);
 }

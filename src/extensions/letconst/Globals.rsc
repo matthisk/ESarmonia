@@ -96,5 +96,6 @@ public Env globals = (
 	"Intl.NumberFormat":l,
 	
 	// Other
-	"arguments":l
+	"arguments":l,
+	"console":l
 );

@@ -23,7 +23,7 @@ Id(str) generateNamer() {
 &T <: Tree desugarVisitor( &T <: Tree pt ) {
 	Id(str) generateUId = generateNamer();
 
-	pt = solve( pt ) {
+	return solve( pt ) {
 		pt = visit( pt ) {
 			case Source src => desugar( src, generateUId )
 			case Function fun => desugar( fun, generateUId )
@@ -31,6 +31,4 @@ Id(str) generateNamer() {
 			case Statement stm => desugar( stm, generateUId )
 		}
 	};
-	
-	return declareVariables( pt );
 }

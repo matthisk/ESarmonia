@@ -1,80 +1,59 @@
-
 module desugar::Declarations
 
-import core::Syntax;
+import extensions::arrow::Syntax;
 
 import ParseTree;
 import Set;
 import IO;
-
-anno set[Declaration] node@declarations;
-
-alias Node = &T <: Tree;
 
 data Declaration
 	= decl( Id name )
 	| decl( Id name, Expression val )
 	;
 
-public Node setDeclaration( Node e, Id d )
-	= e[@declarations = { decl( d ) }]
-	when ! e@declarations?;
+public Expression setDeclaration( Expression e, decl( Id name ) ) 
+	= (Expression)`(<Id name> =\> <Expression e>)()`;
+public Expression setDeclaration( Expression e, decl( Id name, Expression val ) )
+	= (Expression)`(<Id name> =\> <Expression e>)(<Expression val>)`;
+public Expression setDeclarations( Expression e, set[Declaration] decls )
+	= (Expression)`((<Params ps>) =\> <Expression e>)(<{ArgExpression ","}* args>)`
+	when
+		<Params ps,{ArgExpression ","}* args> := extractParams( decls );
 
-public Node setDeclaration( Node e, Id d )
-	= e[@declarations = e@declarations + decl( d )]
-	when e@declarations?;
-
-public Node setDeclaration( Node e, Declaration d )
-	= e[@declarations= { d }]
-	when ! e@declarations?;
+Params extractParams( set[Declaration] decls ) {
+	params = (Params)``;
+	args = (ArgExpressions)``;
 	
-public Node setDeclaration( Node e, Declaration d )
-	= e[@declarations = e@declarations + d]
-	when e@declarations?; 
-
-public Node setDeclarations( Node e, set[Declaration] decl )
-	= e[@declarations = decl]
-	when ! e@declarations?;
-	
-public Node setDeclarations( Node e, set[Declaration] decl )
-	= e[@declarations = e@declarations + decl]
-	when e@declarations?;
-
-public &T <: Tree declareVariables( &T <: Tree src ) {
-	set[Declaration] variables = {};
-	
-	&Y<:Tree addBindings(&Y<:Tree n) { variables += n@declarations; return n; }
-	Statement* insertBindings(Statement* stms) { 
-		stms = declareVariables( stms, variables ); 
-		variables = {}; 
-		return stms; 
+	for( decl( Id name, Expression val ) <- decls, {Param ","}* ps := params.lst, {ArgExpression ","}* ar := args.lst ) {
+		params = (Params)`<{Param ","}* ps>,<Id name>`;
+		args = (ArgExpressions)`<{ArgExpression ","}* ar>,<Expression val>`;
 	}
 	
-	return visit( src ) {
-		case Statement* stms => insertBindings(stms)
-			when !isEmpty(variables)
-		case Expression e => addBindings(e)
-			when e@declarations? 
-		case Statement s => addBindings(s)
-			when s@declarations?
+	for( decl( Id name ) <- decls, {Param ","}* ps := params.lst ) {
+		params = (Params)`<{Param ","}* ps>,<Id name>`;
 	}
+	
+	return <params,args.lst>;
 }
 
-private default tuple[set[Declaration],Node] getOrSet( Node n, set[Declaration] variables )
-	= <variables + n@declarations,n>
-	when n@declarations?;
-private default tuple[set[Declaration],Node] getOrSet( Node n, set[Declaration] variables )
-	= <variables,n>;
-private tuple[set[Declaration],Statement*] getOrSet( Statement* stms, set[Declaration] variables )
-	= < {}, declareVariables( stms, variables ) >
+Statement setDeclaration( Statement s, Declaration d )
+	= (Statement)
+				`{
+				'<Statement declaration>
+				'<Statement s>
+				'}`
 	when
-		size(variables) > 0;
+		VariableDeclaration vd := extract( d ),
+		Statement declaration := (Statement)`var <VariableDeclaration vd>;`;
 
-private Statement* declareVariables( Statement* stms, set[Declaration] variables )
-	= result
+Statement setDeclarations( Statement s, set[Declaration] decls )
+	= (Statement)
+				`{
+				'<Statement declaration>
+				'<Statement s>
+				'}`
 	when
-		Statement decl := makeDeclaration( variables ),
-		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement decl> <Statement* stms> }`;
+		Statement declaration := makeDeclaration( decls );
 
 private Statement makeDeclaration( set[Declaration] variables ) {
 	<var,variables> = takeOneFrom( variables );

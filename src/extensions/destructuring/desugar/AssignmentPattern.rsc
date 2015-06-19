@@ -1,5 +1,6 @@
 module extensions::destructuring::desugar::AssignmentPattern
 
+import desugar::Declarations;
 import IO;
 import extensions::destructuring::Syntax;
 import extensions::destructuring::desugar::Util;
@@ -50,7 +51,7 @@ list[Expression] destructurePattern( Id original, Id name, int nesting, pattern:
 	= destructurePattern( original, name, nesting, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression rest> ]` );
 
 list[Expression] toRemainder( Id original, Id name, int nesting, Expression size, (LHSExpression)`<AssignmentPattern rest>` )
-	= setDecl( r, decl(ref) ) 
+	= r 
 	when
 		Id ref := [Id]"<name>$slice",
 		list[Expression] r := destructure( (Expression)`<Id name>.slice(<Expression size>)`, ref, nesting + 1, rest );

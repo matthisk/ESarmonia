@@ -80,6 +80,11 @@ syntax Param
 	= Id
 	;
 
+// Helper for creating concrete syntax (not actually used in grammar)
+syntax ArgExpressions
+	= {ArgExpression ","}* lst
+	;
+
 syntax ArgExpression
 	= Expression
 	;

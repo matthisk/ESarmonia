@@ -6,6 +6,9 @@ extend extensions::destructuring::desugar::Shared;
 
 extend extensions::destructuring::desugar::AssignmentPattern;
 
+import extensions::arrow::Syntax;
+import desugar::Declarations;
+import List;
 import IO;
 
 @doc{
@@ -37,21 +40,20 @@ Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pa
 		Id ref := generateUId("_arg"),
 		Statement* desBody := desugarBody( pattern, ref, body, generateUId );
 
-Statement desugar( (Statement)`var <VariableDeclaration d>;`, Id(str) generateUId )
-	= desugarDecl( d, generateUId )
-	when
-		/AssignmentPattern _ := d;
-Statement desugar( s:(Statement)`var <VariableDeclaration d>,<{VariableDeclaration ","}+ ds>;`, Id(str) generateUId )
-	= (Statement)`{ <Statement* result> }`
-	when
-		/AssignmentPattern := s,
-		(Statement)`{ <Statement* desD> }` := desugarDecl( d, generateUId ),
-		(Statement)`{ <Statement* desRest> }` := desugar( (Statement)`var <{VariableDeclaration ","}+ ds>;`, generateUId ),
-		Statement* result := concat( desD, desRest );
+Statement desugar( s:(Statement)`var <{VariableDeclaration ","}+ vds>;`, Id(str) generateUId ) 
+	= desugarVds( s, generateUId )
+	when /AssignmentPattern _ := s;
 
-Statement desugar( (Statement)`var <VariableDeclaration d>;`, Id(str) generateUId )
-	= desugarDecl( d, generateUId );
+Statement desugarVds( (Statement)`var <{VariableDeclaration ","}+ vds>;`, Id(str) generateUId ) {
+	list[Statement*] result = [ desugarDecl( vd, generateUId ) | vd <- vds ];
+	Statement* body = ( stmEmpty() | concat( it, stmts ) | stmts <- result );
 	
+	return (Statement)
+					`{
+					'<Statement* body>
+					'}`;
+}
+
 @doc{
 Because our syntax lacks support for comma expression we can not use this to transform destructuring-
 assignment expressions to ES5 code. Instead I chose to use array which can behave kind of the same.
@@ -68,30 +70,42 @@ This solution will in the end be somewhat slower when interpreted by your js eng
 of using the shift function.
 }
 Expression desugar( (Expression)`<ArrayDestructure arrPattern> = <Expression val>`, Id(str) generateUId )
-	= setDeclaration( result, ref )
+	= setDeclaration( result, decl( ref ) )
 	when
 		Id ref := generateUId("_ref"),
 		AssignmentPattern pattern := (AssignmentPattern)`<ArrayDestructure arrPattern>`,
 		list[Expression] destructure := destructure( val, ref, 1, pattern ),
-		(Expression) e := convertToCSArray( destructure ),
-		Expression result := (Expression)`<Expression e>.shift()`;
+		Expression result := convertToCSFunction( destructure );
 		
 Expression desugar( (Expression)`<ObjectDestructure pattern> = <Expression val>`, Id(str) generateUId )
-	= setDeclaration( result, ref )
+	= setDeclaration( result, decl( ref ) )
 	when
 		Id ref := generateUId("_ref"),
 		AssignmentPattern pattern := (AssignmentPattern)`<ObjectDestructure pattern>`,
 		list[Expression] destructure := destructure( val, ref, 1, pattern ),
-		Expression e := convertToCSArray( destructure ),
-		Expression result := (Expression)`<Expression e>.shift()`;
+		Expression result := convertToCSFunction( destructure );
 
-default Statement desugarDecl( VariableDeclaration d, Id(str) generateUId ) = (Statement)`var <VariableDeclaration d>;`;
-Statement desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>`, Id(str) generateUId )
-	= (Statement)`{ <Statement* result> }`
+default Statement* desugarDecl( VariableDeclaration d, Id(str) generateUId ) = statementStar( (Statement)`var <VariableDeclaration d>;` );
+Statement* desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>`, Id(str) generateUId )
+	= result
 	when
 		Id ref := generateUId("_ref"),
 		list[Expression] destructure := destructureNoRef( val, ref, 1, pattern ),
 		Statement* result := convertToStatementStar( destructure );
+
+private Expression convertToCSFunction( list[Expression] es ) {
+	for(e <- es) println(e);
+	<e1,es> = takeOneFrom(es);
+	println("aap");println(e1);
+	list[Statement] stats =
+        [ (Statement)`var result = <Expression e1>;`,
+          *[ (Statement)`<Expression e>;` | e <- es ],
+          (Statement)`return result;`
+        ];
+    Statement* body = statementStar(stats);     
+     
+	return (Expression)`(() =\> { <Statement* body> })()`;
+}
 
 private Expression convertToCSArray( list[Expression] es ) {
 	Expression result = (Expression)`[]`; 
@@ -102,7 +116,7 @@ private Expression convertToCSArray( list[Expression] es ) {
 		}
 	}
 	
-	return result;
+	return (Expression)`<Expression result>.shift()`;
 }
 
 private Statement* convertToStatementStar( list[Expression] es ) {

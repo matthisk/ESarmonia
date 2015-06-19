@@ -3,6 +3,7 @@ module extensions::forof::Desugar
 extend desugar::Base;
 extend extensions::forof::Syntax;
 
+import desugar::Declarations;
 import IO;
 
 Statement desugar( (Statement)`for( <Declarator declarator> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>`, Id(str) generateUId )
@@ -29,6 +30,12 @@ default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> 
 									'} finally { 
 									'	<Statement finalBlock> 
 									'}`;
+
+Statement loopBody( Statement* body )
+	= setDecalration( res, decl( clos, closureFun ) )
+	when
+		/Function _ := body,
+		Statement* res := (Statement)`<Id clos>();`;
 
 Statement iterableLoop( Declarator d, ForBinding binding, Expression arr, Statement body )
 	= res

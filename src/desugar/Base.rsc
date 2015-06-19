@@ -1,8 +1,6 @@
-
 module desugar::Base
 
 import ParseTree;
-import desugar::Declarations;
 import core::Syntax;
 
 anno Statement Expression@runtime;
@@ -53,10 +51,19 @@ Statement* statementStar( list[Statement] stmts ) {
 	}
 }
 
+Statement* statementStar( list[Expression] exps ) {
+	list[Statement] stmts = [ (Statement)`<Expression e>;` | e <- exps ];
+	return statementStar(stms);
+}
+
 Statement* \append( Statement* ss, Statement s )
 	= result
 	when
-		(Statement)`{ <Statement* result> }` := (Statement)`{ <Statement* ss> <Statement s> }`;
+		(Statement)`{ <Statement* result> }` := (Statement)
+														`{ 
+														'<Statement* ss> 
+														'<Statement s> 
+														'}`;
 
 Statement* prepend( Statement s, Statement* ss )
 	= result
