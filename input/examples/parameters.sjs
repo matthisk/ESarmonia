@@ -17,8 +17,24 @@ function f(x, ...y) {
 }
 f(3, "hello", true) == 6;
 
-function f(x, y, z) {
+function f2(x, y, z) {
   return x + y + z;
 }
 // Pass each elem of array as argument
 f(...[1,2,3]) == 6;
+
+
+function ff() {
+    var called = false;
+    function fn(parts, a, b) {
+      called = true;
+      return parts instanceof Array &&
+        parts[0]     === "foo"      &&
+        parts[1]     === "bar\n"    &&
+        parts.raw[0] === "foo"      &&
+        parts.raw[1] === "bar\\n"   &&
+        a === 123                   &&
+        b === 456;
+    }
+    return fn `foo${123}ba\tr\n${456}` && called;
+}

@@ -12,6 +12,7 @@ extend extensions::destructuring::Desugar;
 extend extensions::template::Desugar;
 extend extensions::literal::Desugar;
 extend extensions::newtarget::Desugar;
+extend extensions::letconst::Desugar;
 //extend extensions::generators::Desugar;
 
 import ParseTree;
@@ -30,7 +31,6 @@ import extensions::letconst::Resolve;
 void compile(str input) {
 	pt = parse(#start[Source], input);
 	dpt = resolve( desugarVisitor( pt ) );
-	print(dpt);
 }
 
 &T <: Tree throwErrors(&T <: Tree src, set[Message] messages ) {

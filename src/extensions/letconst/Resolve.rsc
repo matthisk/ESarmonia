@@ -1,4 +1,3 @@
-
 module extensions::letconst::Resolve
 
 import ParseTree;

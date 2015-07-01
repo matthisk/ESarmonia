@@ -1,14 +1,8 @@
+/*
+ * Test: temporal dead zone
+ */
 function() {
-	function C() {}
-	var x = 0;
-}
-
-
-function() {
-	function C_1() {}
-	var x_0 = 1;
-	{
-		function C_0() {}
-		var x_1 = 2;
-	}
+    var passed = (function(){ try { qux; } catch(e) { return true; }}());
+    var qux = 456;
+    return passed;
 }
