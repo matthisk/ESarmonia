@@ -77,7 +77,7 @@ syntax Params
 	;
 
 syntax Param
-	= Id
+	= Id id
 	;
 
 // Helper for creating concrete syntax (not actually used in grammar)

@@ -9,6 +9,7 @@ import extensions::letconst::Globals;
 import extensions::letconst::Util;
 
 &T <: Tree resolve( &T <: Tree pt ) {
+	pt = uniqueify(pt);
 	<declare, lookup, getRenaming, getMessages> = makeResolver();
 	refs = resolve( pt, declare, lookup );
 	ren = getRenaming(refs);
@@ -36,7 +37,7 @@ Refs resolve(Function f, Scope parentScope, Declare declare, Lookup lookup )
 Scope addParametersToScope( Function f, Scope scope ) 
 	= scope[env = scope.env + p]
 	when
-		Env p := ( "<x>" : x@\loc | x <- f.parameters.lst);
+		Env p := ( "<x>" : x.id@\loc | x <- f.parameters.lst);
 
 Refs resolve( Statement* stats, Scope parentScope, Declare declare, Lookup lookup ) {
 	Scope scope = block( (), parentScope );
@@ -164,4 +165,21 @@ Scope varDefs(Statement* body,Scope parentScope) {
   definer(body);
   
   return closure(env,cl,parentScope);
+}
+
+// until we can make this generic...
+// and maybe merg with resolve to prevent another traversal.
+&T <: Tree uniqueify( &T <: Tree s) {
+  int count = 0;
+
+  loc uniq(loc id) {
+    id.fragment = "<count>";
+    count += 1;
+    return id;
+  };
+    
+  return visit (s) {
+    case Id x => x[@\loc=uniq(x@\loc)]
+      //when x@\loc.extension == "rsc"
+  }
 }

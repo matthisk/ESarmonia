@@ -4,6 +4,7 @@ module extensions::letconst::Util
 import ParseTree;
 import Message;
 import IO;
+import Set;
 import extensions::letconst::Syntax;
 
 alias LEnv = lrel[str name, loc def];
@@ -50,6 +51,9 @@ bool varInClosure( str name, Scope scope ) {
 	return false;
 }
 
+// need compare of extensions, rascal files are not rascal:// anymore.
+bool isCapture(loc u, loc d) = u.extension != d.extension;
+
 tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
   set[Message] messages = {};
   map[loc, str] toRename = ();
@@ -74,24 +78,47 @@ tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
     }
     return ren;
   }
+ 
+  set[loc] lookupEnv(Env env, str name, loc use) {
+    if(name in env) {
+	    loc def = env[name];
+	    
+	    if(!isCapture(use, def)) {
+	    	return {def};
+	    }
+	    
+	    toRename[def] = name;
+    }
+    
+    return {};
+  }
   
   set[loc] lookup(str name, loc use, Scope scope) {
 	top-down visit( scope ) {
 		case block( Env env, _ ) : {
-			if(name in env) return {env[name]};
+			refs = lookupEnv(env, name, use);
+			
+			if(size(refs) > 0) return refs;
 		}
 		// If the variable references to a declaration in the function scope
 		// but not to a declaration in its block scope, this reference is seen
 		// as illegal, thus the referenced declaration is to be renamed
 		case closure( Env env, LEnv cl, _ ) : {
 			if(name in cl) 
-				for( loc def <- cl[name] ) 
+				for( loc def <- cl[name] ) {
 					toRename[def] = name;
-			if(name in env) return {env[name]};
+				}
+			refs = lookupEnv(env, name, use);
+			
+			if(size(refs) > 0) return refs;
+				
+				
 		}
 		// Global declarations
 		case root( Env env ) : {
-			if(name in env) return {};
+			refs = lookupEnv(env, name, use);
+			
+			if(size(refs) > 0) return refs;
 		}
 	}
 	

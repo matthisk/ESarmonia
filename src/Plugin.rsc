@@ -40,10 +40,11 @@ void() makeRegistrar(str lang, str ext) {
 					if( isCompatibilityTest(pt@\loc) ) {
 						return compatibilityAnnotator(pt);
 					} else {
-						<js, xref, renaming> = desugarAndResolve(s);
+						js = desugarAll(s, runtime=false);
+						//<js, xref, renaming> = desugarAndResolve(s);
 						//s = addHoverDocs(s, renaming);
-						xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
-			  			s = s[@hyperlinks=xref2];
+						//xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
+			  			//s = s[@hyperlinks=xref2];
 			  			if( js@messages? ) s = s[@messages = js@messages];
 			  			return s;
 					}
@@ -54,7 +55,8 @@ void() makeRegistrar(str lang, str ext) {
 			builder(set[Message](Tree tree) {
 				if( isCompatibilityTest( tree@\loc ) ) return {};
 				
-				fixed = rename(js, renaming);
+				//fixed = rename(js, renaming);
+				fixed = js;
 				
 				out = tree@\loc.top[extension="js"];
 				writeFile(out, unparse(fixed));
