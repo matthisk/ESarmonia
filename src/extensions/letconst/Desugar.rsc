@@ -75,12 +75,12 @@ Statement makeLoopBody( list[Id] loopBindings, Id loopClosureId, Id loopLabel ) 
 	`{
 	'let _ret = <Id loopClosureId>(<{ArgExpression ","}* args>);
 	'
-	'switch(result) {
+	'switch(_ret) {
 	'	case "break" : break <Id loopLabel>;
 	'	case "continue" : continue;
 	'	
 	'	default:
-	'		if(typeof result !== 'object') return _ret.v;
+	'		if(typeof _ret === 'object') return _ret.v;
 	'}
 	'}`;
 }

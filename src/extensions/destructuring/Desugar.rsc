@@ -93,9 +93,7 @@ Statement* desugarDecl( Declarator d, (VariableDeclaration)`<AssignmentPattern p
 		Statement* result := convertToStatementStar( d, destructure );
 
 private Expression convertToCSFunction( list[Expression] es ) {
-	for(e <- es) println(e);
 	<e1,es> = takeOneFrom(es);
-	println("aap");println(e1);
 	list[Statement] stats =
         [ (Statement)`var result = <Expression e1>;`,
           *[ (Statement)`<Expression e>;` | e <- es ],
