@@ -40,11 +40,10 @@ void() makeRegistrar(str lang, str ext) {
 					if( isCompatibilityTest(pt@\loc) ) {
 						return compatibilityAnnotator(pt);
 					} else {
-						js = desugarAll(s, runtime=false);
-						//<js, xref, renaming> = desugarAndResolve(s);
-						//s = addHoverDocs(s, renaming);
-						//xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
-			  			//s = s[@hyperlinks=xref2];
+						<js, xref, renaming> = desugarAndResolve(s);
+						s = addHoverDocs(s, renaming);
+						xref2 = { <u, d, x> | <u, d, x> <- xref, u.path == pt@\loc.path, d.path == pt@\loc.path }; 
+			  			s = s[@hyperlinks=xref2];
 			  			if( js@messages? ) s = s[@messages = js@messages];
 			  			return s;
 					}
@@ -55,11 +54,8 @@ void() makeRegistrar(str lang, str ext) {
 			builder(set[Message](Tree tree) {
 				if( isCompatibilityTest( tree@\loc ) ) return {};
 				
-				//fixed = rename(js, renaming);
-				fixed = js;
-				
 				out = tree@\loc.top[extension="js"];
-				writeFile(out, unparse(fixed));
+				writeFile(out, unparse(js));
 				return  {};
 			}),
 			
@@ -102,36 +98,22 @@ start[Source] compatibilityAnnotator(start[Source] s) {
 }
 
 start[Source] addHoverDocs(start[Source] s, map[loc, str] renaming) {
+  generateUId = generateNamer();
+  
   return visit (s) {
     case Statement stm: {
-      stm2 = desugar(stm);
+      stm2 = desugar(stm, generateUId);
       if (stm2 != stm) {
         insert stm[@doc="<stm2>"];
       }
     }
     case Expression exp: {
-      exp2 = desugar(exp);
+      exp2 = desugar(exp, generateUId);
       if (exp2 != exp) {
         insert exp[@doc="<exp2>"];
       }
     }
     case Id x =>x[@doc=renaming[x@\loc]]
-      when x@\loc in renaming
-  }
-}
-
-tuple[start[Source], Refs, map[loc, str]] desugarAndResolve(start[Source] src) {
-	js = desugarAll(src,runtime=false);
-	js = uniqueify(js);
-	<lookup, getRenaming> = makeResolver();
-	xref = resolve(js.top, lookup);
-	renaming = getRenaming(xref);
-	return <js, xref, renaming>;
-}
-
-start[Source] rename(start[Source] src, map[loc, str] renaming) {
-  return visit (src) {
-    case Id x => parse(#Id, renaming[x@\loc])
       when x@\loc in renaming
   }
 }

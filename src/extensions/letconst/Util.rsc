@@ -104,7 +104,7 @@ tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
 		// but not to a declaration in its block scope, this reference is seen
 		// as illegal, thus the referenced declaration is to be renamed
 		case closure( Env env, LEnv cl, _ ) : {
-			if(name in cl) 
+			if(name in cl<0>) 
 				for( loc def <- cl[name] ) {
 					toRename[def] = name;
 				}

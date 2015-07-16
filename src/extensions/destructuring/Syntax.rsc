@@ -1,6 +1,5 @@
 module extensions::destructuring::Syntax
 extend core::Syntax;
-//extend extensions::object::Syntax;
 
 syntax Param
 	= AssignmentPattern

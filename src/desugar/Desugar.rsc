@@ -17,15 +17,20 @@ extend extensions::letconst::Desugar;
 
 import ParseTree;
 import extensions::letconst::Resolve;
+import extensions::letconst::Util;
 
 &T <: Tree desugarAll(&T <: Tree src, bool runtime = true, bool throwReferenceErrors = false) {
+	return desugarAndResolve(src, runtime=runtime, throwReferenceErrors=throwReferenceErrors)<0>;
+}
+
+tuple[&T <: Tree, Refs, map[loc, str]] desugarAndResolve(&T <: Tree src, bool runtime = true, bool throwReferenceErrors = false) {
 	pt = desugarVisitor( src );
-	pt = resolve( pt );
+	<pt, refs, renaming> = resolver( pt );
 	
 	if( runtime ) pt = runtimeVisitor(pt);
 	if( throwReferenceErrors && pt@messages? ) pt = throwErrors(pt, pt@messages);
 	
-	return pt;
+	return <pt, refs, renaming>;
 }
 
 void compile(str input) {

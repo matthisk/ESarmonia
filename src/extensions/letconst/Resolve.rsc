@@ -8,18 +8,20 @@ import extensions::letconst::Globals;
 
 import extensions::letconst::Util;
 
-&T <: Tree resolve( &T <: Tree pt ) {
+&T <: Tree resolve( &T <: Tree pt ) = resolve(pt)<0>; 
+
+tuple[&T <: Tree, Refs, map[loc, str]] resolver( &T <: Tree pt ) {
 	pt = uniqueify(pt);
 	<declare, lookup, getRenaming, getMessages> = makeResolver();
 	refs = resolve( pt, declare, lookup );
-	ren = getRenaming(refs);
+	renaming = getRenaming(refs);
 	
-	pt = rename(pt,ren)[@messages = getMessages()]; 
+	pt = rename(pt,renaming)[@messages = getMessages()]; 
 	pt = visit(pt) {
 		case (Declarator)`<LetOrConst _>` => (Declarator)`var`
 	}
 	
-	return pt;
+	return <pt, refs, renaming>;	
 }
 
 Refs resolve(src:(start[Source])`<Statement* stats>`, Declare declare, Lookup lookup) 
@@ -136,7 +138,7 @@ Scope varDefs(Statement* body,Scope parentScope) {
   map[str,loc] env = (); 
   lrel[str,loc] cl = [];
   
-  void define((Declarator)`var`,Id x) { env["<x>"] = x@\loc; cl += <"<x>",x@\loc>; }
+  void define((Declarator)`var`,Id x) { env["<x>"] = x@\loc; } //cl += <"<x>",x@\loc>; }
   void define((Declarator)`let`,Id x) { cl += <"<x>",x@\loc>; }
   void define((Declarator)`const`,Id x) { cl += <"<x>",x@\loc>; }
   
