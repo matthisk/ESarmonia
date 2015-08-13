@@ -65,7 +65,7 @@ Scope setScope(Scope scope, Statement stat, Declare declare) {
 
 	top-down-break visit( stat ) {
 		case (Statement)`{ <Statement* _> }`: ; 
-		case Function f: if(f has name) define(f@\loc,"<f.name>",f@\loc);
+		case Function f: if(f has name) define(f@\loc,"<f.name>",f.name@\loc);
 		case (Statement)`let <{VariableDeclaration ","}+ vds>;`: define(vds);
 		case (Statement)`const <{VariableDeclaration ","}+ vds>;`: define(vds);
 	}

@@ -22,12 +22,15 @@ data Scope
 	| closure( Env env, LEnv unaccesiblestuff, Scope parent )
 	| root( Env env );
 
+bool BLOCK_LEVEL_FUNCTION = false;
+
 &T <: Tree rename(&T <: Tree src, map[loc, str] renaming) {
   return visit (src) {
     case Id x => parse(#Id, renaming[x@\loc])
     	when x@\loc in renaming
     case (Statement)`<Function f>` => (Statement)`var <Id fName> = <Function fNew>;`
     	when f@\loc in renaming, 
+    		 BLOCK_LEVEL_FUNCTION,
     		 Id fName := [Id]renaming[f@\loc],
     		 Params ps := f.parameters,
     		 Statement* body := f.body,

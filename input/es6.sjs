@@ -2,6 +2,7 @@
 
 var myFunc = _this => _this + (_this => this);
 
+
 var noot = "noot";
 var str = `aap ${ noot }`;
 

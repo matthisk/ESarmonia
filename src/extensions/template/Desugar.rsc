@@ -14,7 +14,7 @@ public str inp2 = "`aap
 
 data TemplatePart
 	= string( TemplateChars cs )
-	| expr( Expression e )
+	| exprtp( Expression e )
 	;
 
 Expression toStringLiteral( list[DoubleStringChar] cs ) {
@@ -55,7 +55,7 @@ Expression toExpression( list[TemplatePart] parts ) {
 	return result;
 }
 
-Expression app( Expression result, expr( Expression e ) )
+Expression app( Expression result, exprtp( Expression e ) )
 	= (Expression)`<Expression result> + (<Expression e>)`;
 	
 Expression app( Expression result, string( cs ) )
@@ -85,7 +85,7 @@ tuple[Expression,Expression] extractStrings( list[TemplatePart] parts ) {
 		
 Expression extractExpressions( list[TemplatePart] parts )
 	= [Expression]s
-	when s := ( "call(" | it + unparse(e) + "," | expr( Expression e ) <- parts )[0..-1] + ")";
+	when s := ( "call(" | it + unparse(e) + "," | exprtp( Expression e ) <- parts )[0..-1] + ")";
 
 Expression desugar( (Expression)`<TemplateLiteral template>`, _ )
 	= toExpression( desugarTemplateLiteral( template ) );
@@ -102,14 +102,14 @@ list[TemplatePart] desugarTemplateLiteral( (TemplateLiteral)`\`<TemplateChars cs
 	= [string( cs )];
 
 list[TemplatePart] desugarTemplateLiteral( (TemplateLiteral)`<TemplateHead head><Expression e><TemplateSpans spans>` )
-	= [string( head.cs ), expr( e ), *desugarSpans( spans )];
+	= [string( head.cs ), exprtp( e ), *desugarSpans( spans )];
 
 list[TemplatePart] desugarSpans( (TemplateSpans)`}<TemplateChars cs>\`` )
 	= [string( cs )];
 list[TemplatePart] desugarSpans( (TemplateSpans)`<TemplateMiddleList lst><Expression e><TemplateTail tail>` )
-	= [*desugarMiddle( lst ), expr(e), string( tail.cs )];
+	= [*desugarMiddle( lst ), exprtp(e), string( tail.cs )];
 
 list[TemplatePart] desugarMiddle( (TemplateMiddleList)`<TemplateMiddle middle>` )
 	= [string( middle.cs )];
 list[TemplatePart] desugarMiddle( (TemplateMiddleList)`<TemplateMiddle middle><Expression e><{TemplateMiddle Expression}+ rest>` )
-	= [string( middle.cs ), expr( e ) ] + desugarMiddle( rest );
+	= [string( middle.cs ), exprtp( e ) ] + desugarMiddle( rest );

@@ -70,7 +70,7 @@ private Statement makeDeclaration( set[Declaration] variables ) {
 	VariableDeclaration decl = extract( var );
 	VarDecl result = (VarDecl)`let <VariableDeclaration decl>;`;
 	
-	for( Declaration var <- variables, (VarDecl)`var <{VariableDeclaration ","}+ decls>;` := result ) {
+	for( Declaration var <- variables, (VarDecl)`let <{VariableDeclaration ","}+ decls>;` := result ) {
 		VariableDeclaration decl = extract( var );
 		result = (VarDecl)`let <{VariableDeclaration ","}+ decls>, <VariableDeclaration decl>;`;
 	}

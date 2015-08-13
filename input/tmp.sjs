@@ -1,9 +1,9 @@
 function() {
-	{
-	var _loop = function(i) {
-		i;
-	};
-	_loop$0 : for(let i = 0;i<0;i++) { _loop(i); }
-	_loop$1 : for(let i = 0;i<0;i++) { _loop(i); }
-	}
+    class C {
+      method() { return typeof C === "function"; }
+    }
+    var M = C.prototype.method;
+    C = undefined;
+    return C === undefined && M();
 }
+

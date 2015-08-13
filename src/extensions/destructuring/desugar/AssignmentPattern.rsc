@@ -9,7 +9,7 @@ import extensions::destructuring::Runtime;
 alias State = tuple[ Id original, Id name, int nesting, int index ];
 alias Destructuring = list[Part];
 
-data Part = expr( Expression e ) | decl( Id id );
+data Part = expr( Expression e ) | id( Id id );
 
 default Destructuring destructureNoRef( Expression original, Id name, int nesting, AssignmentPattern pattern )
 	= destructure( original, name, nesting, pattern );
@@ -17,7 +17,7 @@ Destructuring destructureNoRef( (Expression)`<Id _>`, Id name, int nesting, patt
 	= destructurePattern( name, name, nesting, pattern ); 
 
 default Destructuring destructure( Expression original, Id name, int nesting, AssignmentPattern pattern )
-	= assignment( name, original, pattern ) + destructurePattern( name, name, nesting, pattern );
+	= [expr( assignment( name, original, pattern ) )] + destructurePattern( name, name, nesting, pattern );
 
 // assignment
 Expression assignment( Id name, Expression original, (AssignmentPattern)`<ObjectDestructure _>` )
@@ -54,13 +54,13 @@ Destructuring destructurePattern( Id original, Id name, int nesting, pattern:(As
 	= destructurePattern( original, name, nesting, (AssignmentPattern)`[ <{AssignmentElement ","}* ps>, ...<LHSExpression rest> ]` );
 
 Destructuring toRemainder( Id original, Id name, int nesting, Expression size, (LHSExpression)`<AssignmentPattern rest>` )
-	= [ref] + r 
+	= [id( ref )] + r 
 	when
 		Id ref := [Id]"<name>$slice",
 		Destructuring r := destructure( (Expression)`<Id name>.slice(<Expression size>)`, ref, nesting + 1, rest );
 		
 Destructuring toRemainder( Id _, Id name, int _, Expression size, (LHSExpression)`<Expression rest>` )
-	= [ (Expression)`<Expression rest> = <Id name>.slice(<Expression size>)` ];
+	= [ expr( (Expression)`<Expression rest> = <Id name>.slice(<Expression size>)` ) ];
 
 // destructuring
 Destructuring destructuring( State s, AssignmentPattern pattern )
@@ -76,46 +76,46 @@ Destructuring destructuringHelper( State s, <p,ps> )
 
 // AssignmentDestructure
 Destructuring assignmentDestructure( State s, (AssignmentElement)`<Expression pName>` )
-	= [ (Expression)`<Expression pName> = <Id name>[<Expression index>]` ]
+	= [ expr( (Expression)`<Expression pName> = <Id name>[<Expression index>]` ) ]
 	when
 		Expression index := [Expression]"<s.index>",
 		Id name := s.name;
 
 Destructuring assignmentDestructure( State s, (AssignmentProperty)`<Id pName>` )
-	= [ (Expression)`<Id pName> = <Id name>.<Id pName>` ]
+	= [ expr( (Expression)`<Id pName> = <Id name>.<Id pName>` ) ]
 	when
 		Id name := s.name;
 		
 Destructuring assignmentDestructure( State s, (AssignmentElement)`<Expression pName> = <Expression defaultValue>` )
-	= [ (Expression)`<Expression pName> = <Expression refAtIndex> === undefined ? <Expression defaultValue> : <Expression refAtIndex>` ]
+	= [ expr( (Expression)`<Expression pName> = <Expression refAtIndex> === undefined ? <Expression defaultValue> : <Expression refAtIndex>` ) ]
 	when
 		Expression index := [Expression]"<s.index>",
 		Id name := s.name,
 		Expression refAtIndex := (Expression)`<Id name>[<Expression index>]`;
 
 Destructuring assignmentDestructure( State s, (AssignmentProperty)`<Id pName> = <Expression defaultValue>` )
-	= [ (Expression)`<Id pName> = <Expression ref> === undefined ? <Expression defaultValue> : <Expression ref>` ]
+	= [ expr( (Expression)`<Id pName> = <Expression ref> === undefined ? <Expression defaultValue> : <Expression ref>` ) ]
 	when
 		Id name := s.name,
 		Expression ref := (Expression)`<Id name>.<Id pName>`;
 		
 Destructuring assignmentDestructure( State s, (AssignmentProperty)`<Id kName> : <Id vName>` )
-	= [ (Expression)`<Id vName> = <Id name>.<Id kName>` ]
+	= [ expr( (Expression)`<Id vName> = <Id name>.<Id kName>` ) ]
 	when
 		Id name := s.name;
 
 Destructuring assignmentDestructure( State s, (AssignmentProperty)`<Id kName> : <Id vName> = <Expression def>` )
-	= [ (Expression)`<Id vName> = <Id name>.<Id kName> === undefined ? <Expression def> : <Id name>.<Id kName>` ]
+	= [ expr( (Expression)`<Id vName> = <Id name>.<Id kName> === undefined ? <Expression def> : <Id name>.<Id kName>` ) ]
 	when
 		Id name := s.name;
 
 Destructuring assignmentDestructure( State s, (AssignmentProperty)`<Id vName> = <Expression def>` )
-	= [ (Expression)`<Id vName> = <Id name>.<Id vName> === undefined ? <Expression def> : <Id name>.<Id vName>` ]
+	= [ expr( (Expression)`<Id vName> = <Id name>.<Id vName> === undefined ? <Expression def> : <Id name>.<Id vName>` ) ]
 	when
 		Id name := s.name;
 
 default Destructuring assignmentDestructure( State s, (AssignmentProperty)`<PropertyName propertyName> : <AssignmentElement val>` )
-	= [ (Expression)`<Id vName> = <Expression init>` ]
+	= [ expr( (Expression)`<Id vName> = <Expression init>` ) ]
 	when
 		Id name := s.name,
 		Id vName := extractName( val ),
