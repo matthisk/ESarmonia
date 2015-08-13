@@ -35,3 +35,27 @@ parsing](http://tutor.rascal-mpl.org/Rascal/Rascal.html#/Rascal/Declarations/Syn
     General > Existing Projects into Workspace, as root directory, select the
     `RMonia` directory in the cloned repo. Import the project there.
     You're now set up to explore the code, write ECMAScript 6 JavaScript, transform to ECMAScript 5, and run the compatibility tests.
+
+## Project outline
+
+The main code is stored in the RMonia Eclipse project. Below we summarize its contents. 
+
+The two most important folders are `src/extensions` and `src/core`. The former contains
+all ECMAScript 6 language extensions and the latter the ECMAScript 5 grammar which all
+extensions extend.
+
+These are the most important folders in the repository:
+
+* `input/examples`: Example ECMAScript 6 JavaScript code
+* `input/compatibility`: Compatibility tests
+* `src/core`: Example format descriptors for the Derric case study
+* `src/desugar`: Source code of name-fix and case studies
+* `src/extensions`: Implementation of name-fix and required data structures
+* `src/test`: Additional utilities for running unit/compatibility tests
+
+Each language extension consists of a `Syntax.rsc` file defining the language extension's grammar.
+A `Desugar.rsc` defining the extension's desugar steps and a folder `test` containing some basic unit tests. Several language extensions also contain a folder named `desugar` which has additional Rascal modules that contain code to help with the desugaring.
+
+* `src/core/resolve`: Contains the original v-fix hygiene algorithm
+* `src/extensions/letconst/Resolve.rsc`: Contains the duplicated v-fix algorithm for transformation of block-binding and hygiene
+
