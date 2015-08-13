@@ -59,3 +59,6 @@ A `Desugar.rsc` defining the extension's desugar steps and a folder `test` conta
 * `src/core/resolve`: Contains the original v-fix hygiene algorithm
 * `src/extensions/letconst/Resolve.rsc`: Contains the duplicated v-fix algorithm for transformation of block-binding and hygiene
 
+## Running RMonia
+
+When Eclipse is loaded with the RMonia project any file created inside the `input` folder with the extension `.sjs` will automatically be parsed and transformed by RMonia. The compatibility tests can either be invoked by opening one of the tests from the folders inside `input/compatibility` or by importing the module `src/test/Compatibility` on the command line and invoking the function `run`. The `NODEBIN` and `COREJS` should be set as absolute paths to respectivly the nodejs command and core-js ES6 shim (this file resides in the folder `src/runtime/`).
