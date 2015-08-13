@@ -4,6 +4,7 @@ module extensions::letconst::Util
 import ParseTree;
 import Message;
 import IO;
+import Set;
 import extensions::letconst::Syntax;
 
 alias LEnv = lrel[str name, loc def];
@@ -21,12 +22,15 @@ data Scope
 	| closure( Env env, LEnv unaccesiblestuff, Scope parent )
 	| root( Env env );
 
+bool BLOCK_LEVEL_FUNCTION = false;
+
 &T <: Tree rename(&T <: Tree src, map[loc, str] renaming) {
   return visit (src) {
     case Id x => parse(#Id, renaming[x@\loc])
     	when x@\loc in renaming
     case (Statement)`<Function f>` => (Statement)`var <Id fName> = <Function fNew>;`
     	when f@\loc in renaming, 
+    		 BLOCK_LEVEL_FUNCTION,
     		 Id fName := [Id]renaming[f@\loc],
     		 Params ps := f.parameters,
     		 Statement* body := f.body,
@@ -49,6 +53,9 @@ bool varInClosure( str name, Scope scope ) {
 	}
 	return false;
 }
+
+// need compare of extensions, rascal files are not rascal:// anymore.
+bool isCapture(loc u, loc d) = u.extension != d.extension;
 
 tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
   set[Message] messages = {};
@@ -74,24 +81,47 @@ tuple[Declare, Lookup, GetRenaming, GetMessages] makeResolver() {
     }
     return ren;
   }
+ 
+  set[loc] lookupEnv(Env env, str name, loc use) {
+    if(name in env) {
+	    loc def = env[name];
+	    
+	    if(!isCapture(use, def)) {
+	    	return {def};
+	    }
+	    
+	    toRename[def] = name;
+    }
+    
+    return {};
+  }
   
   set[loc] lookup(str name, loc use, Scope scope) {
 	top-down visit( scope ) {
 		case block( Env env, _ ) : {
-			if(name in env) return {env[name]};
+			refs = lookupEnv(env, name, use);
+			
+			if(size(refs) > 0) return refs;
 		}
 		// If the variable references to a declaration in the function scope
 		// but not to a declaration in its block scope, this reference is seen
 		// as illegal, thus the referenced declaration is to be renamed
 		case closure( Env env, LEnv cl, _ ) : {
-			if(name in cl) 
-				for( loc def <- cl[name] ) 
+			if(name in cl<0>) 
+				for( loc def <- cl[name] ) {
 					toRename[def] = name;
-			if(name in env) return {env[name]};
+				}
+			refs = lookupEnv(env, name, use);
+			
+			if(size(refs) > 0) return refs;
+				
+				
 		}
 		// Global declarations
 		case root( Env env ) : {
-			if(name in env) return {};
+			refs = lookupEnv(env, name, use);
+			
+			if(size(refs) > 0) return refs;
 		}
 	}
 	

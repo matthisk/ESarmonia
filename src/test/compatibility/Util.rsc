@@ -43,7 +43,7 @@ tuple[bool,str] runNodeProcess( str dpt, int outputFormat = FULL ) {
 	
 		if( ! result ) { println( 4, "<dpt>" ); }
 	} else if( outputFormat == NONE ) {
-		result = output == "true\n" && err == "";
+		result = (output == "true\n" || output == "1\n") && err == "";
 	}
 	
 	return <result,"<output>\n<err>\n<dpt>">;

@@ -6,30 +6,38 @@ extend extensions::forof::Syntax;
 import desugar::Declarations;
 import IO;
 
-Statement desugar( (Statement)`for( <Declarator declarator> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>`, Id(str) generateUId )
-	= setDeclaration( res, decl( arr, (Expression)`[<{ArgExpression ","}* args>]` ) )
-	when
-		Id arr := generateUId("_arr"),
-		Statement* body := unscope( body ),
-		VariableDeclaration d := declareBinding( binding, (Expression)`<Id arr>[i]` ),
-		Statement res := (Statement)`for (var i = 0; i \< <Id arr>.length; i++) { 
-									'	<Declarator declarator> <VariableDeclaration d>; 
-									'	<Statement* body> 
-									'}`;
+Statement desugar( (Statement)`for( <Declarator declarator> <ForBinding binding> of [ <{ArgExpression ","}* args> ] ) <Statement body>`, Id(str) generateUId ) {
+	Id arrId = generateUId("_arr");
+	Expression arr = (Expression)`[<{ArgExpression ","}* args>]`;
+	VariableDeclaration d = declareBinding( binding, (Expression)`<Id arrId>[i]` );
+	Statement* body = unscope( body );
 
-default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of <Expression exp> ) <Statement body>`, Id(str) generateUId )
-	= setDeclarations( res, initialization )
-	when
-		Statement loop := iterableLoop( d, binding, exp, body ),
-		(Statement)`{ <Statement* catchBlock> }` := (Statement)`{ _didIteratorError = true; _iteratorError = err; }`,
-		Statement finalBlock := iterableFinal(),
-		Statement res := (Statement)`try { 
-									'	<Statement loop> 
-									'} catch(err) { 
-									'	<Statement* catchBlock> 
-									'} finally { 
-									'	<Statement finalBlock> 
-									'}`;
+	return (Statement)
+		`{
+		'	let <Id arrId> = <Expression arr>;
+		'	for (var i = 0; i \< <Id arr>.length; i++) { 
+		'		<Declarator declarator> <VariableDeclaration d>;
+		'		<Statement* body> 
+		'	}
+		'}`;
+}
+
+default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> of <Expression exp> ) <Statement body>`, Id(str) generateUId ) {
+	Statement loop = iterableLoop( d, binding, exp, body );
+	Statement* catchBlock = unscope((Statement)`{ _didIteratorError = true; _iteratorError = err; }`);
+	Statement finalBlock = iterableFinal();
+	Statement res = 
+		(Statement)
+				`try { 
+				'	<Statement loop> 
+				'} catch(err) { 
+				'	<Statement* catchBlock> 
+				'} finally { 
+				'	<Statement finalBlock> 
+				'}`;
+	
+	return setDeclarations( res, initialization );
+}
 
 Statement loopBody( Statement* body )
 	= setDecalration( res, decl( clos, closureFun ) )

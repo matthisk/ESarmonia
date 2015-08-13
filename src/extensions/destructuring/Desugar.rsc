@@ -1,4 +1,3 @@
-@cachedParser{desugar.cached.Parser}
 module extensions::destructuring::Desugar
 extend desugar::Base;
 extend extensions::destructuring::Syntax;
@@ -16,7 +15,7 @@ import IO;
  to be desugared by the destructuring extensions
 }
 Statement desugar( (Statement)`for( <Declarator d> <AssignmentPattern pt> in <Expression x> ) <Statement body>`, Id(str) generateUId )
-	= (Statement)`for( var <Id i> in <Expression x> ) { 
+	= (Statement)`for( <Declarator d> <Id i> in <Expression x> ) { 
 				 '	<Declarator d> <AssignmentPattern pt> = <Id i>; 
 				 '	<Statement* body> 
 				 '}`
@@ -40,12 +39,12 @@ Function desugar( (Function)`function( <{Param ","}* bef>, <AssignmentPattern pa
 		Id ref := generateUId("_arg"),
 		Statement* desBody := desugarBody( pattern, ref, body, generateUId );
 
-Statement desugar( s:(Statement)`var <{VariableDeclaration ","}+ vds>;`, Id(str) generateUId ) 
+Statement desugar( s:(Statement)`<Declarator d> <{VariableDeclaration ","}+ vds>;`, Id(str) generateUId ) 
 	= desugarVds( s, generateUId )
 	when /AssignmentPattern _ := s;
 
-Statement desugarVds( (Statement)`var <{VariableDeclaration ","}+ vds>;`, Id(str) generateUId ) {
-	list[Statement*] result = [ desugarDecl( vd, generateUId ) | vd <- vds ];
+Statement desugarVds( (Statement)`<Declarator d> <{VariableDeclaration ","}+ vds>;`, Id(str) generateUId ) {
+	list[Statement*] result = [ desugarDecl( d, vd, generateUId ) | vd <- vds ];
 	Statement* body = ( stmEmpty() | concat( it, stmts ) | stmts <- result );
 	
 	return (Statement)
@@ -74,7 +73,7 @@ Expression desugar( (Expression)`<ArrayDestructure arrPattern> = <Expression val
 	when
 		Id ref := generateUId("_ref"),
 		AssignmentPattern pattern := (AssignmentPattern)`<ArrayDestructure arrPattern>`,
-		list[Expression] destructure := destructure( val, ref, 1, pattern ),
+		Destructuring destructure := destructure( val, ref, 1, pattern ),
 		Expression result := convertToCSFunction( destructure );
 		
 Expression desugar( (Expression)`<ObjectDestructure pattern> = <Expression val>`, Id(str) generateUId )
@@ -82,53 +81,58 @@ Expression desugar( (Expression)`<ObjectDestructure pattern> = <Expression val>`
 	when
 		Id ref := generateUId("_ref"),
 		AssignmentPattern pattern := (AssignmentPattern)`<ObjectDestructure pattern>`,
-		list[Expression] destructure := destructure( val, ref, 1, pattern ),
+		Destructuring destructure := destructure( val, ref, 1, pattern ),
 		Expression result := convertToCSFunction( destructure );
 
-default Statement* desugarDecl( VariableDeclaration d, Id(str) generateUId ) = statementStar( (Statement)`var <VariableDeclaration d>;` );
-Statement* desugarDecl( (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>`, Id(str) generateUId )
+default Statement* desugarDecl( Declarator d, VariableDeclaration d, Id(str) generateUId ) = statementStar( (Statement)`var <VariableDeclaration d>;` );
+Statement* desugarDecl( Declarator d, (VariableDeclaration)`<AssignmentPattern pattern> = <Expression val>`, Id(str) generateUId )
 	= result
 	when
 		Id ref := generateUId("_ref"),
-		list[Expression] destructure := destructureNoRef( val, ref, 1, pattern ),
-		Statement* result := convertToStatementStar( destructure );
+		Destructuring destructure := destructureNoRef( val, ref, 1, pattern ),
+		Statement* result := convertToStatementStar( d, destructure );
 
-private Expression convertToCSFunction( list[Expression] es ) {
-	for(e <- es) println(e);
-	<e1,es> = takeOneFrom(es);
-	println("aap");println(e1);
+private Expression convertToCSFunction( Destructuring parts ) {
+	set[Declaration] decls = { decl( id ) | id( id ) <- parts };
+	list[Expression] es = [ e | expr( e ) <- parts ];
+
+	<e1,es> = headTail(es);
 	list[Statement] stats =
         [ (Statement)`var result = <Expression e1>;`,
           *[ (Statement)`<Expression e>;` | e <- es ],
           (Statement)`return result;`
         ];
-    Statement* body = statementStar(stats);     
+    Statement* body = statementStar(stats);    
+    body = setDeclarations( body, decls ); 
      
 	return (Expression)`(() =\> { <Statement* body> })()`;
 }
 
-private Expression convertToCSArray( list[Expression] es ) {
-	Expression result = (Expression)`[]`; 
+private Expression convertToCSArray( Destructuring parts ) {
+	list[Id] decls = [ id | id( id ) <- parts ];
+	list[Expression] es = [ e | expr( e ) <- parts ];
 	
-	for( e <- es ) {
-		if( (Expression)`[ <{ArgExpression ","}* done> ]` := result ) {
-			result = (Expression)`[<{ArgExpression ","}* done>, <Expression e> ]`;
-		}
-	}
-	
+	Expression result = toArray(es);
 	return (Expression)`<Expression result>.shift()`;
 }
 
-private Statement* convertToStatementStar( list[Expression] es ) {
+private Statement* convertToStatementStar( Declarator d, Destructuring parts ) {
 	Statement* result = stmEmpty();
+	list[Id] decls = [ id | id(id) <- parts ];
+	list[Expression] es = [ e | expr(e) <- parts ];
+	
+	for( id <- decls ) {
+		result = \append( result, (Statement)`<Declarator d> id;` );
+	}
 	
 	for( Expression e <- es ) {
 		Statement variable;
 		if( (Expression)`<Id var> = <Expression val>` := e ) {
-			variable = (Statement)`var <Id var> = <Expression val>;`;
+			variable = (Statement)`<Declarator d> <Id var> = <Expression val>;`;
 		} else {
 			variable = (Statement)`<Expression e>;`;
 		}
+		
 		result = \append( result, variable );
 	}
 	
@@ -138,8 +142,8 @@ private Statement* convertToStatementStar( list[Expression] es ) {
 private Statement* desugarBody( AssignmentPattern pattern, Id ref, Statement* body, Id(str) generateUId )
 	= concat( result, checkForDefaultFunctionValue( pattern, body ) )
 	when
-		list[Expression] destructure := destructureNoRef( (Expression)`<Id ref>`, ref, 1, pattern ),
-		Statement* result := convertToStatementStar( destructure );
+		Destructuring destructure := destructureNoRef( (Expression)`<Id ref>`, ref, 1, pattern ),
+		Statement* result := convertToStatementStar( (Declarator)`var`, destructure );
 
 private default Statement* checkForDefaultFunctionValue( AssignmentPattern _, Statement* body )
 	= body;

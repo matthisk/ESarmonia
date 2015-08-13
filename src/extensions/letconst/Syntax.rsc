@@ -1,4 +1,3 @@
-
 module extensions::letconst::Syntax
 extend core::Syntax;
 
@@ -9,4 +8,9 @@ syntax LetOrConst
 
 syntax Declarator
 	= LetOrConst
+	;
+	
+keyword Reserved
+	= "let"
+	| "const"
 	;

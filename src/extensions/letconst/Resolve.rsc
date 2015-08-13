@@ -1,4 +1,3 @@
-
 module extensions::letconst::Resolve
 
 import ParseTree;
@@ -9,17 +8,20 @@ import extensions::letconst::Globals;
 
 import extensions::letconst::Util;
 
-&T <: Tree resolve( &T <: Tree pt ) {
+&T <: Tree resolve( &T <: Tree pt ) = resolve(pt)<0>; 
+
+tuple[&T <: Tree, Refs, map[loc, str]] resolver( &T <: Tree pt ) {
+	pt = uniqueify(pt);
 	<declare, lookup, getRenaming, getMessages> = makeResolver();
 	refs = resolve( pt, declare, lookup );
-	ren = getRenaming(refs);
+	renaming = getRenaming(refs);
 	
-	pt = rename(pt,ren)[@messages = getMessages()]; 
+	pt = rename(pt,renaming)[@messages = getMessages()]; 
 	pt = visit(pt) {
 		case (Declarator)`<LetOrConst _>` => (Declarator)`var`
 	}
 	
-	return pt;
+	return <pt, refs, renaming>;	
 }
 
 Refs resolve(src:(start[Source])`<Statement* stats>`, Declare declare, Lookup lookup) 
@@ -37,7 +39,7 @@ Refs resolve(Function f, Scope parentScope, Declare declare, Lookup lookup )
 Scope addParametersToScope( Function f, Scope scope ) 
 	= scope[env = scope.env + p]
 	when
-		Env p := ( "<x>" : x@\loc | x <- f.parameters.lst);
+		Env p := ( "<x>" : x.id@\loc | x <- f.parameters.lst);
 
 Refs resolve( Statement* stats, Scope parentScope, Declare declare, Lookup lookup ) {
 	Scope scope = block( (), parentScope );
@@ -63,7 +65,7 @@ Scope setScope(Scope scope, Statement stat, Declare declare) {
 
 	top-down-break visit( stat ) {
 		case (Statement)`{ <Statement* _> }`: ; 
-		case Function f: if(f has name) define(f@\loc,"<f.name>",f@\loc);
+		case Function f: if(f has name) define(f@\loc,"<f.name>",f.name@\loc);
 		case (Statement)`let <{VariableDeclaration ","}+ vds>;`: define(vds);
 		case (Statement)`const <{VariableDeclaration ","}+ vds>;`: define(vds);
 	}
@@ -136,7 +138,7 @@ Scope varDefs(Statement* body,Scope parentScope) {
   map[str,loc] env = (); 
   lrel[str,loc] cl = [];
   
-  void define((Declarator)`var`,Id x) { env["<x>"] = x@\loc; cl += <"<x>",x@\loc>; }
+  void define((Declarator)`var`,Id x) { env["<x>"] = x@\loc; } //cl += <"<x>",x@\loc>; }
   void define((Declarator)`let`,Id x) { cl += <"<x>",x@\loc>; }
   void define((Declarator)`const`,Id x) { cl += <"<x>",x@\loc>; }
   
@@ -165,4 +167,21 @@ Scope varDefs(Statement* body,Scope parentScope) {
   definer(body);
   
   return closure(env,cl,parentScope);
+}
+
+// until we can make this generic...
+// and maybe merg with resolve to prevent another traversal.
+&T <: Tree uniqueify( &T <: Tree s) {
+  int count = 0;
+
+  loc uniq(loc id) {
+    id.fragment = "<count>";
+    count += 1;
+    return id;
+  };
+    
+  return visit (s) {
+    case Id x => x[@\loc=uniq(x@\loc)]
+      //when x@\loc.extension == "rsc"
+  }
 }

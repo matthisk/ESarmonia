@@ -26,12 +26,12 @@ syntax Statement
   | function: Function
   | ifThen: "if" "(" Expression cond ")" Statement () !>> "else" 
   | ifThenElse: "if" "(" Expression cond ")" Statement "else" Statement
-  | doWhile: "do" Statement "while" "(" Expression cond ")" ";"
-  | whileDo: "while" "(" Expression cond ")" Statement
-  | forDo: "for" "(" {Expression ","}* ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement
-  | forDoDeclarations: "for" "(" Declarator {VariableDeclarationNoIn ","}+ ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement  
-  | forIn: "for" "(" Expression var "in" Expression obj ")" Statement
-  | forInDeclaration: "for" "(" Declarator ForBinding "in" Expression obj ")" Statement
+  | doWhile: "do" Statement body "while" "(" Expression cond ")" ";"
+  | whileDo: "while" "(" Expression cond ")" Statement body
+  | forDo: "for" "(" {Expression ","}* ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement body
+  | forDoDeclarations: "for" "(" Declarator declarator {VariableDeclarationNoIn ","}+ ";" {Expression ","}* conds ";" {Expression ","}* ops ")" Statement body 
+  | forIn: "for" "(" Expression var "in" Expression obj ")" Statement body
+  | forInDeclaration: "for" "(" Declarator declarator ForBinding "in" Expression obj ")" Statement body
   | with: "with" "(" Expression scope ")" Statement
 
   // Non local control flow
@@ -77,7 +77,7 @@ syntax Params
 	;
 
 syntax Param
-	= Id
+	= Id id
 	;
 
 // Helper for creating concrete syntax (not actually used in grammar)
@@ -101,7 +101,7 @@ syntax Expression
   | bracket \bracket: "(" Expression ")" 
   | function: Function
   > property: Expression "." Id 
-  | call: Expression "(" { ArgExpression ","}* ")" 
+  | call: Expression "(" { ArgExpression ","}* args ")" 
   | member: Expression "[" Expression "]" 
   > new: "new" Expression
   > postIncr: Expression "++"
@@ -186,7 +186,7 @@ syntax Initializer
 	;  
 
 syntax ForBinding
-	= Id
+	= Id id
 	;
 
 syntax PropertyName

@@ -8,5 +8,22 @@ var _defineProperty = function(obj, key, value) { return Object.defineProperty(o
 var _toConsumableArray = function (arr) { if (Array.isArray(arr)) { for(var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } };
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
-function __createIterableObject(a, b, c) {if (typeof Symbol === "function" && Symbol.iterator) {var arr = [a, b, c,,]; var iterable = {next: function() {return { value: arr.shift(), done: arr.length <= 0 };},}; iterable[Symbol.iterator] = function(){ return iterable; }; return iterable; } else {return eval("(function*() { yield a; yield b; yield c; }())");}}
+function __createIterableObject(arr, methods) {
+        methods = methods || {};
+        if (typeof Symbol !== 'function' || !Symbol.iterator) {
+          return {};
+        }
+        arr.length++;
+        var iterator = {
+          next: function() {
+            return { value: arr.shift(), done: arr.length <= 0 };
+          },
+          'return': methods['return'],
+          'throw': methods['throw']
+        };
+        var iterable = {};
+        iterable[Symbol.iterator] = function(){ return iterator; };
+        return iterable;
+      }
 var global = { __createIterableObject : __createIterableObject }; 
+
