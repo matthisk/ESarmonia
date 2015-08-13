@@ -40,7 +40,7 @@ default Statement desugar( (Statement)`for( <Declarator d> <ForBinding binding> 
 }
 
 Statement loopBody( Statement* body )
-	= setDecalration( res, decl( clos, closureFun ) )
+	= setDeclaration( res, decl( clos, closureFun ) )
 	when
 		/Function _ := body,
 		Statement* res := (Statement)`<Id clos>();`;
