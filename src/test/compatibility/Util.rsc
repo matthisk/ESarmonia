@@ -12,6 +12,9 @@ public int FULL = 0;
 public int BASIC = 1;
 public int NONE = 2;
 
+str NODEBIN = "/home/heimense/local/bin/node";
+str COREJS = "/home/heimense/Thesis/rascal-sweetjs/src/runtime/core.js";
+
 tuple[bool,str] runNashorn( &T <: Tree dpt, int outputFormat = FULL ) {
 	result = false;
 	output = eval( "<dpt>" );
@@ -30,10 +33,10 @@ tuple[bool,str] runNashorn( &T <: Tree dpt, int outputFormat = FULL ) {
 tuple[bool,str] runNodeProcess( &T <: Tree dpt, int outputFormat = FULL ) = runNodeProcess( "<dpt>", outputFormat=outputFormat );
 tuple[bool,str] runNodeProcess( str dpt, int outputFormat = FULL ) {
 	result = false;
-	runtime = "require(\"/ufs/heimense/local/lib/node_modules/core-js/custom.js\");
+	runtime = "require(\"<COREJS>\");
 			  '<readFile(|project://rascal-sweetjs/src/runtime/runtime.js|)>";
 	
-	nodeP = createProcess( "/home/heimense/local/bin/node", args=["--use_strict","-p","<runtime> <dpt>"] );
+	nodeP = createProcess( NODEBIN, args=["--use_strict","-p","<runtime> <dpt>"] );
 	output = readEntireStream( nodeP );
 	err = readEntireErrStream( nodeP );
 	killProcess( nodeP );
