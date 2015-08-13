@@ -8,11 +8,11 @@ let fibonacci = {
     return {
       next() {
         [pre, cur] = [cur, pre + cur];
-        return { done: false, value: cur }
+        return { done: false, value: cur };
       }
-    }
+    };
   }
-}
+};
 
 // With the for of loop we can loop over an iterators values
 for (var n of fibonacci) {
