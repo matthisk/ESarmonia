@@ -1,27 +1,17 @@
-/*
- * Test: temporal dead zone
- */
-function() {
-    var passed = (function(){ try { qux; } catch(e) { return true; }}());
-    var qux = 456;
-    return passed;
-}
-
-function(x,y) {
-	x;
-	this.x;
-	y.x;
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }; var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })(); function() {
+    var C = (function() { 
+	function C() { 
+	_classCallCheck(this,C); 
+} 
 	
+	_createClass(C, [{ key: "method", value: function() {
+		return typeof C === "function";
+	} }], []); 
+	
+	return C; 
+})();
+    var M = C.prototype.method;
+    C = undefined;
+    return C === undefined && M();
 }
 
-
-var obj = { x : 0, m : function() { return; } };
-
-var Aap = (function(_A) { function Aap() { _classCallCheck(this,Aap); _A.prototype.constructor.call(this); } _inherits(Aap,_A); Aap.prototype.update = function() { for( var _len = arguments.length, args = Array( _len > 1 ? _len - 1 : 0 ), _key = 0; _key < _len; _key++) { 
-	args[_key - 1] = arguments[_key]; 
-} (_ref = _A.prototype.update).apply(_ref,_toConsumableArray(args)); }; return Aap; })(A);
-
-var f_0 = function () {  };
-{
-	var f_1 = function () {  };
-}

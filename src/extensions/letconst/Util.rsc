@@ -22,7 +22,7 @@ data Scope
 	| closure( Env env, LEnv unaccesiblestuff, Scope parent )
 	| root( Env env );
 
-bool BLOCK_LEVEL_FUNCTION = false;
+bool BLOCK_LEVEL_FUNCTION = true;
 
 &T <: Tree rename(&T <: Tree src, map[loc, str] renaming) {
   return visit (src) {
