@@ -21,7 +21,7 @@ parsing](http://tutor.rascal-mpl.org/Rascal/Rascal.html#/Rascal/Declarations/Syn
 
 1.  Install a fresh [Eclipse](http://www.eclipse.org), version Luna (RCP & RAP).
 
-2.  The unzipped artifact contains a full clone of the following repository:
+2.  The following link contains an archive of the current repository:
     [https://github.com/matthisk/RMonia/archive/master.zip](https://github.com/matthisk/RMonia/archive/master.zip).
 
 3.  From within the new Eclipse, go to Help > Install New Software...; click
