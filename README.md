@@ -1,4 +1,4 @@
-# Syntactic language extensions for ECMAScript
+# JavaScript language extension with language workbenches
 author: Matthisk Heimensen, supervisor: Tijs van der Storm
 
 ## Summary
